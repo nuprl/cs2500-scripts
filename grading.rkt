@@ -7,22 +7,20 @@
 (provide ;assign-to-graders
          ;record-graded-assignment
          ;post-graded-problemset
+         send-assignment-to-graders
+         grader-assignment
+         grader
          email-grader
          problem-set)
 
 ;; name (string) x dir (string)
 (struct problem-set (name dir))
-;; name (string) x email (string)
-(struct grader (name email))
+;; user (string) x name (string) x email (string)
+(struct grader (user name email))
 ;; grader x (list of users)
-(struct grader-assignment (grader users))
+(struct grader-assignment (grader ps users))
 ;; name (string) x dir (path)
 (struct user (name dir))
-
-;; (listof grader)
-(define graders 
-  (map (lambda (triple) (grader (car triple) (second triple)))
-    (with-input-from-file "tutors.txt" read)))
 
 ;; get-config
 ;; symbol -> any
@@ -31,17 +29,32 @@
   (let ([config-ls (with-input-from-file "config.rktd" read)])
     (or (second (assq s config-ls)))))
 
+;; TODO: (define-parameters (name ...) (default ...) (guard ...))
 ;; string
-(define course-name (get-config 'course-name))
+(define course-name (make-parameter (get-config 'course-name)))
 ;; string
-(define head-ta-email (get-config 'head-ta-email))
+(define head-ta-email (make-parameter (get-config 'head-ta-email)))
 ;; string
-(define head-ta-name (get-config 'head-ta-name))
+(define head-ta-name (make-parameter (get-config 'head-ta-name)))
 ;; string
-(define server-dir (get-config 'server-dir))
+(define server-dir (make-parameter (get-config 'server-dir)))
+;; string
+(define smtp-server (make-parameter (get-config 'smtp-server)))
+;; string
+(define smtp-port (make-parameter (get-config 'smtp-port)))
+;; string
+(define smtp-user (make-parameter (get-config 'smtp-user)))
+(define smtp-passwd (make-parameter (get-config 'smtp-passwd)))
 
-;; email-graders
-;; (listof problem-set) -> void
+;; (listof grader)
+(define graders 
+  (make-parameter 
+    (map (lambda (triple) (grader (car (string-split (second triple) "@"))
+                                  (car triple) (second triple)))
+    (with-input-from-file "tutors.txt" read))))
+
+;; send-assignment-to-graders
+;; problem-set ... -> void
 ;; assigns graders in tutors.txt a rougly equal number of assignments
 ;; to grade from each problem-set. each grader is sent a seperate email
 ;; for each problem-set.
@@ -51,17 +64,15 @@
 ;; To: <grader-email> 
 ;; From: <head-ta-email>
 ;; Subject: <course-name> Grading, <problem-set>
-;; Body: empty
+;; Body: <any>
 ;; Attachments: <problem-set>.tar.gz
 ;; 
-;; <problem-set>.tar.gz will contain a folder named <username-string> for
+;; <problem-set>.tar.gz will contain a folder named <username> for
 ;; each student. The folder will contain all material handed in for
 ;; <problem-set>
-(define (email-graders problem-set-ls) 
-  (void)
-  #;(for-each 
-    (compose assign-graders tar-assignments email-assignments) 
-    problem-set-ls))
+(define (send-assignment-to-graders . problem-sets)
+  (let ([gras (flatten (map assign-graders problem-sets))]) 
+    (for-each email-grader gras (map tar-assignments gras))))
 
 ;; assign-graders
 ;; problem-set -> (listof grader-assignment)
@@ -72,12 +83,30 @@
                        (call-with-values (split-path x) 
                          (lambda (z path x)
                             (user (path->string path) path))))
-                 (directory-list (build-path server-dir (problem-set-dir ps))))]
+                 (directory-list (build-path (server-dir) (problem-set-dir ps))))]
          [users (shuffle users)]
          [n (ceiling (/ (length users) (length graders)))])
-    (map (lambda (grader users) (grader-assignment grader users))
+    (map (lambda (grader users) (grader-assignment grader ps users))
          (shuffle graders)
          (split-into-chunks n users))))
+
+(module+ test
+  (require rackunit)
+  (parameterize ([server-dir "/tmp"]
+                 [graders (list (grader "grader1" "grader@ccs.neu.edu")
+                                (grader "grader2" "grader@ccs.neu.edu"))])
+    (make-directory "/tmp/test")
+    (for-each (compose (curry build-path "/tmp/test") make-directory)
+      '(test1 test2 test3 test4 test5 test6))
+    (check-equal? 
+      (length (assign-graders (problem-set "Test" "test")))
+      2)
+    (check-equal?
+      (length (car (assign-graders (problem-set "Test" "test"))))
+      3))
+  (delete-directory "/tmp/test")
+  (for-each (compose (curry build-path "/tmp/test") delete-directory)
+            '(test1 test2 test3 test4 test5 test6)))
 
 ;; taken from http://stackoverflow.com/questions/8725832/how-to-split-list-into-evenly-sized-chunks-in-racket-scheme
 (define (split-into-chunks n xs)
@@ -94,47 +123,69 @@
 
 
 ;; tar-assignments
-;; problem-set, grader-assignment -> path to <problem-set>.tar.gz
-;; given a problem set and a grader-assignment, create
+;; grader-assignment -> path to <problem-set>.tar.gz
+;; given a grader-assignment, create
 ;; <problem-set>.tar.gz that contains a folder named <username-string>
 ;; for each student. This folder contains all material handed in for
 ;; <problem-set> in plain text.
-(define (tar-assignments ps gra)
-  (apply (curry tar-gzip (format "/tmp/~a.tar.gz" (problem-set-name ps)))
-         (map user-dir (grader-assignment-users gra))))
+(define (tar-assignments gra)
+  (apply (curry tar-gzip 
+           (format "/tmp/~a-~a.tar.gz"
+              (grader-user (grader-assignment-grader gra)) 
+              (grader-assignment-ps gra)))
+    (map user-dir (grader-assignment-users gra))))
+
+(module+ test
+  (require rackunit)
+  (parameterize ([server-dir "/tmp"]
+                 [graders (list (grader "grader1" "grader@ccs.neu.edu")
+                                (grader "grader2" "grader@ccs.neu.edu"))])
+    (make-directory "/tmp/test")
+    (for-each (compose (curry build-path "/tmp/test") make-directory)
+      '(test1 test2 test3 test4 test5 test6))
+    (let* ([ps (problem-set "Test" "test")]
+          [file (tar-assignments ps (assign-graders ps))])
+      (check-true (file-exists? file))
+      (delete-file file)))
+  (delete-directory "/tmp/test")
+  (for-each (compose (curry build-path "/tmp/test") delete-directory)
+            '(test1 test2 test3 test4 test5 test6)))
 
 ;; email-grader
-;; grader-email, problem-set, path to <problem-set>.tar.gz -> void
+;; grader-assignment, path to <problem-set>.tar.gz -> void
 ;; emails a grader their grading assignment
-(define (email-grader to-addr ps ps.tar.gz)
-  (let* ([filename (call-with-values (thunk (split-path ps.tar.gz)) 
+(define (email-grader gra ps.tar.gz)
+  (let* ([to-addr (grader-email (grader-assignment-grader gra))]
+         [ps (grader-assignment-ps gra)]
+         [filename (call-with-values (thunk (split-path ps.tar.gz)) 
            (lambda (z path x) (path->string path)))]
         ;; TODO: This is awful -- fix net/smtp and net/sendmail to allow
         ;; attachments
         [bound "-q1w2e3r4t5"]
         [message 
-          (list (format "--~a" bound)    
-            (format "Content-Type: application; name=\"~a\""
+          (list (format "Content-Type: application; name=\"~a\""
               filename)
-            (format "Content-Transfer-Encoding: base64")
+            "Content-Transfer-Encoding: base64"
             (format "Content-Disposition: attachment; filename=\"~a\""
               filename)
             (with-output-to-string 
               (thunk (base64-encode-stream (open-input-file ps.tar.gz) 
                 (current-output-port)))))])
-    (smtp-send-message (get-config 'smtp-server)
-                     head-ta-email 
+    (smtp-send-message (smtp-server) 
+                     (head-ta-email) 
                      (list to-addr)
                      (append-headers
                        (standard-message-header 
-                       head-ta-email (list to-addr) (list) (list) 
-                       (format "~a Grading, ~a" course-name (problem-set-name ps)))
-            (format "Content-Type: multipart/mixed; boundary=\"~a\"" bound))
+                       (head-ta-email) (list to-addr) (list) (list) 
+                       (format "~a Grading, ~a" (course-name) (problem-set-name ps)))
+            (append-headers
+              "MIME-Version: 1.0"
+              (format "Content-Type: multipart/mixed; boundary=\"~a\"\n" bound)))
                      message
                      #:tls-encode ports->ssl-ports
-                     #:port-no (get-config 'smtp-port)
-                     #:auth-user (get-config 'smtp-user)
-                     #:auth-passwd (get-config 'smtp-passwd))))
+                     #:port-no (smtp-port)
+                     #:auth-user (smtp-user)
+                     #:auth-passwd (smtp-passwd))))
 
 ;; record-graded-assignment
 ;; Email -> void
@@ -159,3 +210,24 @@
 ;; <problem-set> -> void
 ;; posts grades from <problem-set>.rktd to the handin server
 (define (post-graded-problemset problem-set) (void))
+#|
+            "Content-Type: text/plain"
+            "Content-Disposition: inline"
+            (format "Hello grader,\nAttached is your grading assignment for the week. When you're done grading each pair's assignment, please send me an email, with a .tar.gz file named after the pair's username, containing all the annotated files from the problem set. Please format the email as follows:\n\n
+
+To: wilbowma@ccs.neu.edu\n
+From: <your .ccs or .husky email>\n
+Subject: Graded <problem-set> for <username-string>: <grade>\n
+Body: comments\n
+Attachments: <username-string>.tar.gz\n
+
+For example, suppose student1 and student2 are working together, and you just finished grading their assignment for problem set 2. Suppose they earned 8 out of 10 points. You should send me an email that looks like:
+
+To: wilbowma@ccs.neu.edu\n
+From: <your .ccs or .husky email>\n
+Subject: Graded ps2 for student1+student2: 8/10\n
+Body: Student1 is a pro. Student2 clearly needs to learn to write recursive functions better.\n
+Attachments: student1+student2.tar.gz\n
+
+student1+student2.tar.gz should contain all racket files student1+student2 turned in, with your annotations.")
+|#
