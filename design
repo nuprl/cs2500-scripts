@@ -1,0 +1,30 @@
+* Cron file to run at due date
+* tar assignments for each student/pair/group
+* assign each grader assignments/graders assignments to grade
+* email each grader their assignments
+  - email from ccs account
+  - format message to be easily parsable
+  - single email per grader, single .tar containing .tar.gz per
+    assignment
+* parse returns from graders
+  - develop format expected from graders to be easily parseable
+    To: wilbowma@ccs
+    Subject: CS2500 Graded <assignment name> for <username>: x/n
+    Body: doesn't matter
+    Attachment: .tar.gz with assignment
+  - expect single email, single tar.gz per assignment?
+
+* script to be used be grader to return graded assignments
+  - input .tar.gz and username (both for validation)
+    -- validate username matches usernames in file
+    -- validate assignment annotated with grade
+  - format
+    To: wilbowma@ccs
+    Subject: CS2500 Graded <assignment name> for <username>: x/n
+    Body: doesn't matter
+    Attachment: .tar.gz with assignment
+
+* script to email all graded assignments at once
+  - input: file ((username path) ...)
+  - user prior script
+
