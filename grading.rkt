@@ -1,5 +1,6 @@
 #lang racket
 ;; TODO: clean up
+;; TODO: Somethings are fragile with respect to paths, current directory
 (require file/tar
          net/smtp
          net/base64
@@ -82,12 +83,12 @@
 ;; TODO: Run local smtp server to test email functions
 #;(module+ test
   (require rackunit)
-  (parameterize ([server-dir "/tmp"]
+  (parameterize ([server-dir "/tmp/"]
                  [graders (list (grader "grader1" "grader1" "wilbowma@ccs.neu.edu")
                                 (grader "grader2" "grader2" "wilbowma@ccs.neu.edu"))])
-    (for-each (compose make-directory* (curry build-path "/tmp/test") symbol->string)
+    (for-each (compose (lambda (dir) (make-directory* dir) (with-output-to-file (build-path dir "handin.rkt") (thunk (display 120)))) (curry build-path "/tmp/test") symbol->string)
       '(test1 test2 test3 test4 test5 test6))
-    (send-assignment-to-graders (problem-set "test" "test")))
+    (send-assignments-to-graders (problem-set "test" "test")))
   (delete-directory/files "/tmp/test"))
 
 ;; assign-graders
@@ -98,8 +99,8 @@
   (let* ([users (map (lambda (x) 
                        (call-with-values (thunk (split-path x)) 
                          (lambda (z path y)
-                            (user (path->string path) x))))
-                 (directory-list (build-path (server-dir) (problem-set-dir ps)) #:build? #t))]
+                            (user (path->string path) (build-path (problem-set-dir ps) path)))))
+                 (directory-list (build-path (server-dir) (problem-set-dir ps))))]
          [users (shuffle users)]
          [graders (shuffle (graders))]
          [n (ceiling (/ (length users) (length graders)))])
@@ -148,13 +149,14 @@
   (let ([file (format "/tmp/~a-~a.tar.gz"
                       (grader-user (grader-assignment-grader gra)) 
                       (problem-set-name (grader-assignment-ps gra)))])
-       (apply (curry tar-gzip file)
-         (map user-dir (grader-assignment-users gra)))
+       (parameterize ([current-directory (server-dir)])
+         (apply (curry tar-gzip file)
+                (map user-dir (grader-assignment-users gra))))
        file))
 
 (module+ test
   (require rackunit)
-  (parameterize ([server-dir "/tmp"]
+  (parameterize ([server-dir "/tmp/"]
                  [graders (list (grader "grader1" "grader1" "wilbowma@ccs.neu.edu")
                                 (grader "grader2" "grader2" "wilbowma@ccs.neu.edu"))])
     (for-each (compose (lambda (dir) (make-directory* dir) (with-output-to-file (build-path dir "handin.rkt") (thunk (display 120)))) (curry build-path "/tmp/test") symbol->string)
@@ -162,7 +164,7 @@
     (let* ([ps (problem-set "Test" "test")]
            [files (map tar-assignments (assign-graders ps))])
       (map (lambda (file) (check-true (file-exists? file))) files)
-      #;(map delete-file files))
+      (map delete-file files))
   #;(for-each (compose delete-directory (curry build-path "/tmp/test"))
             '(test1 test2 test3 test4 test5 test6))
   (delete-directory/files "/tmp/test")))
