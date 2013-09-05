@@ -4,13 +4,12 @@
          net/base64
          net/head
          openssl)
-(provide ;assign-to-graders
-         ;record-graded-assignment
+(provide ;record-graded-assignment
          ;post-graded-problemset
          send-assignment-to-graders
-         grader-assignment
-         grader
-         email-grader
+;         grader-assignment
+;         grader
+;         email-grader
          problem-set)
 
 ;; name (string) x dir (string)
@@ -71,8 +70,20 @@
 ;; each student. The folder will contain all material handed in for
 ;; <problem-set>
 (define (send-assignment-to-graders . problem-sets)
-  (let ([gras (flatten (map assign-graders problem-sets))]) 
-    (for-each email-grader gras (map tar-assignments gras))))
+  (let* ([gras (flatten (map assign-graders problem-sets))]
+         [files (map tar-assignments gras)]) 
+    (for-each email-grader gras files)
+    (for-each delete-file files)))
+
+#;(module+ test
+  (require rackunit)
+  (parameterize ([server-dir "/tmp"]
+                 [graders (list (grader "grader1" "grader1" "wilbowma@ccs.neu.edu")
+                                (grader "grader2" "grader2" "wilbowma@ccs.neu.edu"))])
+    (for-each (compose make-directory* (curry build-path "/tmp/test") symbol->string)
+      '(test1 test2 test3 test4 test5 test6))
+    (send-assignment-to-graders (problem-set "test" "test")))
+  (delete-directory/files "/tmp/test"))
 
 ;; assign-graders
 ;; problem-set -> (listof grader-assignment)
@@ -80,32 +91,32 @@
 ;; number of turned-in assignments
 (define (assign-graders ps) 
   (let* ([users (map (lambda (x) 
-                       (call-with-values (split-path x) 
-                         (lambda (z path x)
-                            (user (path->string path) path))))
-                 (directory-list (build-path (server-dir) (problem-set-dir ps))))]
+                       (call-with-values (thunk (split-path x)) 
+                         (lambda (z path y)
+                            (user (path->string path) x))))
+                 (directory-list (build-path (server-dir) (problem-set-dir ps)) #:build? #t))]
          [users (shuffle users)]
+         [graders (shuffle (graders))]
          [n (ceiling (/ (length users) (length graders)))])
     (map (lambda (grader users) (grader-assignment grader ps users))
-         (shuffle graders)
+         graders
          (split-into-chunks n users))))
 
 (module+ test
   (require rackunit)
   (parameterize ([server-dir "/tmp"]
-                 [graders (list (grader "grader1" "grader@ccs.neu.edu")
-                                (grader "grader2" "grader@ccs.neu.edu"))])
-    (make-directory "/tmp/test")
-    (for-each (compose (curry build-path "/tmp/test") make-directory)
+                 [graders (list (grader "grader1" "grader1" "wilbowma@ccs.neu.edu")
+                                (grader "grader2" "grader2" "wilbowma@ccs.neu.edu"))])
+    (for-each (compose make-directory* (curry build-path "/tmp/test") symbol->string)
       '(test1 test2 test3 test4 test5 test6))
     (check-equal? 
       (length (assign-graders (problem-set "Test" "test")))
       2)
     (check-equal?
-      (length (car (assign-graders (problem-set "Test" "test"))))
+      (length (grader-assignment-users (car (assign-graders (problem-set "Test" "test")))))
       3))
-  (delete-directory "/tmp/test")
-  (for-each (compose (curry build-path "/tmp/test") delete-directory)
+  (delete-directory/files "/tmp/test")
+  #;(for-each (compose delete-directory (curry build-path "/tmp/test"))
             '(test1 test2 test3 test4 test5 test6)))
 
 ;; taken from http://stackoverflow.com/questions/8725832/how-to-split-list-into-evenly-sized-chunks-in-racket-scheme
@@ -113,7 +124,7 @@
   (if (null? xs)
       '()
       (let ((first-chunk (take-up-to n xs))
-            (rest (drop n xs)))
+            (rest (drop xs n)))
            (cons first-chunk (split-into-chunks n rest)))))
 
 (define (take-up-to n xs)
@@ -129,27 +140,27 @@
 ;; for each student. This folder contains all material handed in for
 ;; <problem-set> in plain text.
 (define (tar-assignments gra)
-  (apply (curry tar-gzip 
-           (format "/tmp/~a-~a.tar.gz"
-              (grader-user (grader-assignment-grader gra)) 
-              (grader-assignment-ps gra)))
-    (map user-dir (grader-assignment-users gra))))
+  (let ([file (format "/tmp/~a-~a.tar.gz"
+                      (grader-user (grader-assignment-grader gra)) 
+                      (problem-set-name (grader-assignment-ps gra)))])
+       (apply (curry tar-gzip file)
+         (map user-dir (grader-assignment-users gra)))
+       file))
 
 (module+ test
   (require rackunit)
   (parameterize ([server-dir "/tmp"]
-                 [graders (list (grader "grader1" "grader@ccs.neu.edu")
-                                (grader "grader2" "grader@ccs.neu.edu"))])
-    (make-directory "/tmp/test")
-    (for-each (compose (curry build-path "/tmp/test") make-directory)
+                 [graders (list (grader "grader1" "grader1" "wilbowma@ccs.neu.edu")
+                                (grader "grader2" "grader2" "wilbowma@ccs.neu.edu"))])
+    (for-each (compose (lambda (dir) (make-directory* dir) (with-output-to-file (build-path dir "handin.rkt") (thunk (display 120)))) (curry build-path "/tmp/test") symbol->string)
       '(test1 test2 test3 test4 test5 test6))
     (let* ([ps (problem-set "Test" "test")]
-          [file (tar-assignments ps (assign-graders ps))])
-      (check-true (file-exists? file))
-      (delete-file file)))
-  (delete-directory "/tmp/test")
-  (for-each (compose (curry build-path "/tmp/test") delete-directory)
-            '(test1 test2 test3 test4 test5 test6)))
+           [files (map tar-assignments (assign-graders ps))])
+      (map (lambda (file) (check-true (file-exists? file))) files)
+      #;(map delete-file files))
+  #;(for-each (compose delete-directory (curry build-path "/tmp/test"))
+            '(test1 test2 test3 test4 test5 test6))
+  (delete-directory/files "/tmp/test")))
 
 ;; email-grader
 ;; grader-assignment, path to <problem-set>.tar.gz -> void
@@ -176,7 +187,7 @@
                      (list to-addr)
                      (append-headers
                        (standard-message-header 
-                       (head-ta-email) (list to-addr) (list) (list) 
+                      (head-ta-email) (list to-addr) (list) (list) 
                        (format "~a Grading, ~a" (course-name) (problem-set-name ps)))
             (append-headers
               "MIME-Version: 1.0"
@@ -186,6 +197,8 @@
                      #:port-no (smtp-port)
                      #:auth-user (smtp-user)
                      #:auth-passwd (smtp-passwd))))
+
+
 
 ;; record-graded-assignment
 ;; Email -> void
