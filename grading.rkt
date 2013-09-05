@@ -1,25 +1,29 @@
 #lang racket
+;; TODO: clean up
 (require file/tar
          net/smtp
          net/base64
          net/head
          openssl)
-(provide ;record-graded-assignment
-         ;post-graded-problemset
-         send-assignment-to-graders
+(provide send-assignments-to-graders
 ;         grader-assignment
 ;         grader
 ;         email-grader
-         problem-set)
+         problem-set
+         sanity-check-grades
+         post-grades
+         )
 
 ;; name (string) x dir (string)
 (struct problem-set (name dir))
 ;; user (string) x name (string) x email (string)
 (struct grader (user name email))
-;; grader x (list of users)
+;; grader x (listof users)
 (struct grader-assignment (grader ps users))
 ;; name (string) x dir (path)
 (struct user (name dir))
+;; grader x string x number
+(struct grade-entry (grader username grade))
 
 ;; get-config
 ;; symbol -> any
@@ -52,7 +56,7 @@
                                   (car triple) (second triple)))
     (with-input-from-file "tutors.txt" read))))
 
-;; send-assignment-to-graders
+;; send-assignments-to-graders
 ;; problem-set ... -> void
 ;; assigns graders in tutors.txt a rougly equal number of assignments
 ;; to grade from each problem-set. each grader is sent a seperate email
@@ -69,12 +73,13 @@
 ;; <problem-set>.tar.gz will contain a folder named <username> for
 ;; each student. The folder will contain all material handed in for
 ;; <problem-set>
-(define (send-assignment-to-graders . problem-sets)
+(define (send-assignments-to-graders . problem-sets)
   (let* ([gras (flatten (map assign-graders problem-sets))]
          [files (map tar-assignments gras)]) 
     (for-each email-grader gras files)
     (for-each delete-file files)))
 
+;; TODO: Run local smtp server to test email functions
 #;(module+ test
   (require rackunit)
   (parameterize ([server-dir "/tmp"]
@@ -163,8 +168,8 @@
   (delete-directory/files "/tmp/test")))
 
 ;; email-grader
-;; grader-assignment, path to <problem-set>.tar.gz -> void
-;; emails a grader their grading assignment
+;; grader-assignment, path -> void
+;; emails a grader their grading assignment, in the form of a .tar.gz containing their assignments
 (define (email-grader gra ps.tar.gz)
   (let* ([to-addr (grader-email (grader-assignment-grader gra))]
          [ps (grader-assignment-ps gra)]
@@ -198,49 +203,23 @@
                      #:auth-user (smtp-user)
                      #:auth-passwd (smtp-passwd))))
 
+;; get-graded-problem-set
+;; problem-set -> (listof grades)
+;; retrieves graded problem sets from IMAP server by looking in (grade-mail-box) for emails matching the below format:
+;;
+;; To: (head-ta-email)
+;; From: doesn't matter
+;; Subject: (course-name) graded <problem-set-name>
+;; Body: doesn't matter
+;; Attachments: grades.rkt, graded-<problem-set-name>.tar.gz
+(define (get-graded-problem-set ps) (void))
 
+;; sanity-check-grades
+;; problem-set, (listof grade-entry) -> report??
+;; Checks that there are grades for each student that handed in an assignment, and reports anomolies in grades (>100%, <0%, students with low/decreasing averages)
+(define (sanity-check-grades ps grades) (void))
 
-;; record-graded-assignment
-;; Email -> void
-;; parses an email in the below format, recording the grades from each
-;; graded assignment into <problem-set>.rktd
-
-;; To: wilbowma@ccs.neu.edu
-;; From: <grader email@ccs.neu.edu>
-;; Subject: Graded <problem-set> for <username-string>: <grade>
-;; Body: empty
-;; Attachments: <Gradedproblem-set>.tar.gz
-
-;; <Gradedproblem-set>.tar.gz contains a folder named <username-string>
-;; for each student. The folder contains all material handed in for
-;; <problem-set>, annotated by the graders ;; Each annotated .rkt file
-;; should start with the following strings
-;; ;; <problem-set> Grade: <grade>
-;; ;; Grader: <grader name> <grader email>
-(define (record-graded-assignment email) (void))
-
-;; post-graded-problemset
-;; <problem-set> -> void
-;; posts grades from <problem-set>.rktd to the handin server
-(define (post-graded-problemset problem-set) (void))
-#|
-            "Content-Type: text/plain"
-            "Content-Disposition: inline"
-            (format "Hello grader,\nAttached is your grading assignment for the week. When you're done grading each pair's assignment, please send me an email, with a .tar.gz file named after the pair's username, containing all the annotated files from the problem set. Please format the email as follows:\n\n
-
-To: wilbowma@ccs.neu.edu\n
-From: <your .ccs or .husky email>\n
-Subject: Graded <problem-set> for <username-string>: <grade>\n
-Body: comments\n
-Attachments: <username-string>.tar.gz\n
-
-For example, suppose student1 and student2 are working together, and you just finished grading their assignment for problem set 2. Suppose they earned 8 out of 10 points. You should send me an email that looks like:
-
-To: wilbowma@ccs.neu.edu\n
-From: <your .ccs or .husky email>\n
-Subject: Graded ps2 for student1+student2: 8/10\n
-Body: Student1 is a pro. Student2 clearly needs to learn to write recursive functions better.\n
-Attachments: student1+student2.tar.gz\n
-
-student1+student2.tar.gz should contain all racket files student1+student2 turned in, with your annotations.")
-|#
+;; post-grades
+;; problem-set, (listof grade-entry) -> void
+;; posts grades to the handin server
+(define (post-grades ps grades) (void))
