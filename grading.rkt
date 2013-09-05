@@ -206,15 +206,23 @@
                      #:auth-passwd (smtp-passwd))))
 
 ;; get-graded-problem-set
-;; problem-set -> (listof grades)
-;; retrieves graded problem sets from IMAP server by looking in (grade-mail-box) for emails matching the below format:
+;; problem-set -> (listof path)
+;; retrieves graded problem sets from IMAP server by looking in (grade-mail-box) for emails matching the below format. problem sets are saved to /tmp
 ;;
 ;; To: (head-ta-email)
 ;; From: doesn't matter
 ;; Subject: (course-name) graded <problem-set-name>
 ;; Body: doesn't matter
 ;; Attachments: grades.rkt, graded-<problem-set-name>.tar.gz
+;;
+;; eventually, I'd like just
+;; Attachments: graded-<problem-set-name>.tar.gz
 (define (get-graded-problem-set ps) (void))
+
+;; parse-graded-problem-set
+;; path -> (listof grade-entry)
+;; parses a graded-<problem-set-name>.tar.gz to a (listof grade-entry)
+;; (define (parse-graded-problem-set path) (void))
 
 ;; sanity-check-grades
 ;; problem-set, (listof grade-entry) -> report??
