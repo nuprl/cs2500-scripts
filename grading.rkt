@@ -7,9 +7,9 @@
          net/head
          openssl)
 (provide send-assignments-to-graders
-;         grader-assignment
-;         grader
-;         email-grader
+         grader-assignment
+         grader
+         email-grader
          problem-set
          sanity-check-grades
          post-grades
@@ -49,6 +49,8 @@
 ;; string
 (define smtp-user (make-parameter (get-config 'smtp-user)))
 (define smtp-passwd (make-parameter (get-config 'smtp-passwd)))
+;; grader-name, problem-set-name -> string
+(define message-body (make-parameter (eval (get-config 'message-body))))
 
 ;; (listof grader)
 (define graders 
@@ -173,32 +175,51 @@
 ;; grader-assignment, path -> void
 ;; emails a grader their grading assignment, in the form of a .tar.gz containing their assignments
 (define (email-grader gra ps.tar.gz)
-  (let* ([to-addr (grader-email (grader-assignment-grader gra))]
+  (let* ([grader (grader-assignment-grader gra)]
+         [to-addr (grader-email grader)]
          [ps (grader-assignment-ps gra)]
          [filename (call-with-values (thunk (split-path ps.tar.gz)) 
            (lambda (z path x) (path->string path)))]
         ;; TODO: This is awful -- fix net/smtp and net/sendmail to allow
         ;; attachments
         [bound "-q1w2e3r4t5"]
+        [body ((message-body)
+               (grader-name grader) 
+               (grader-user grader)
+               (grader-email grader)
+               (problem-set-name ps))]
         [message 
-          (list (format "Content-Type: application; name=\"~a\""
+          (list 
+            "This is a message with multiple parts in the MIME format.\n"
+            (format "--~a" bound)
+            "Content-Type: text/plain; charset=us-ascii"
+            "Content-Disposition: inline"
+            "Content-Transfer-Encoding: 7bit\r\n"
+            body
+            (format "--~a" bound)
+            (format "Content-Type: application/octet-stream; name=\"~a\""
               filename)
             "Content-Transfer-Encoding: base64"
-            (format "Content-Disposition: attachment; filename=\"~a\""
+            (format "Content-Disposition: attachment; filename=\"~a\"\r\n"
               filename)
             (with-output-to-string 
               (thunk (base64-encode-stream (open-input-file ps.tar.gz) 
-                (current-output-port)))))])
+                (current-output-port))))
+            (format "--~a--" bound))])
     (smtp-send-message (smtp-server) 
                      (head-ta-email) 
                      (list to-addr)
-                     (append-headers
+                     (append-headers 
                        (standard-message-header 
-                      (head-ta-email) (list to-addr) (list) (list) 
-                       (format "~a Grading, ~a" (course-name) (problem-set-name ps)))
-            (append-headers
-              "MIME-Version: 1.0"
-              (format "Content-Type: multipart/mixed; boundary=\"~a\"\n" bound)))
+                           (head-ta-email) (list to-addr) (list) (list) 
+                           (format "~a Grading, ~a" (course-name) (problem-set-name ps)))
+                       (insert-field 
+                         "MIME-Version"
+                         "1.0"
+                         (insert-field 
+                           "Content-Type"
+                           (format "multipart/mixed; boundary=\"~a\"" bound)
+                           empty-header)))
                      message
                      #:tls-encode ports->ssl-ports
                      #:port-no (smtp-port)
