@@ -4,63 +4,25 @@
 (require racket/match
          file/tar
          net/smtp
-         onet/base64
+         net/base64
          openssl
          net/head
          net/imap
          net/mime
-         srfi/1)
+         srfi/1
+         "gradebook.rkt"
+         "config.rkt")
 (provide send-assignments-to-graders
          ;grader-assignment
          ;grader
          ;email-grader
-         problem-set
          sanity-check-grades
          post-grades)
 
-;; name (string) x dir (string)
-(struct problem-set (name dir))
-;; user (string) x name (string) x email (string)
-(struct grader (user name email))
-;; grader x (listof users)
-(struct grader-assignment (grader ps users))
-;; name (string) x dir (path)
-(struct user (name dir))
-;; grader x string x number
-(struct grade-entry (grader username grade))
-
-;; get-config
-;; symbol -> any
-;; retrieves the config value for the symbol s from config.rktd 
-(define (get-config s)
-  (let ([config-ls (with-input-from-file "config.rktd" read)])
-    (or (second (assq s config-ls)))))
-
-;; TODO: (define-parameters (name ...) (default ...) (guard ...))
-;; string
-(define course-name (make-parameter (get-config 'course-name)))
-;; string
-(define head-ta-email (make-parameter (get-config 'head-ta-email)))
-;; string
-(define head-ta-name (make-parameter (get-config 'head-ta-name)))
-;; string
-(define server-dir (make-parameter (get-config 'server-dir)))
-;; string
-(define smtp-server (make-parameter (get-config 'smtp-server)))
-;; string
-(define smtp-port (make-parameter (get-config 'smtp-port)))
-;; string
-(define smtp-user (make-parameter (get-config 'smtp-user)))
-(define smtp-passwd (make-parameter (get-config 'smtp-passwd)))
-;; grader-name, problem-set-name -> string
-(define message-body (make-parameter (eval (get-config 'message-body))))
-
-;; (listof grader)
-(define graders 
-  (make-parameter 
-    (map (lambda (triple) (grader (car (string-split (second triple) "@"))
-                                  (car triple) (second triple)))
-    (with-input-from-file "tutors.txt" read))))
+;; grader x (listof group)
+(struct grader-assignment (grader ps groups) #:prefab)
+;; (listof user) x path
+(struct group (users dir) #:prefab)
 
 ;; send-assignments-to-graders
 ;; problem-set ... -> void
@@ -91,7 +53,12 @@
   (parameterize ([server-dir "/tmp/"]
                  [graders (list (grader "grader1" "grader1" "wilbowma@ccs.neu.edu")
                                 (grader "grader2" "grader2" "wilbowma@ccs.neu.edu"))])
-    (for-each (compose (lambda (dir) (make-directory* dir) (with-output-to-file (build-path dir "handin.rkt") (thunk (display 120)))) (curry build-path "/tmp/test") symbol->string)
+    (for-each (compose (lambda (dir) 
+                         (unless (directory-exists? dir) (make-directory* dir))
+                         (with-output-to-file (build-path dir "handin.rkt")
+                           (thunk (display 120))
+                           #:exists 'truncate/replace)) 
+                       (curry build-path "/tmp/test") symbol->string)
       '(test1 test2 test3 test4 test5 test6))
     (send-assignments-to-graders (problem-set "test" "test")))
   (delete-directory/files "/tmp/test"))
@@ -104,7 +71,8 @@
   (let* ([users (map (lambda (x) 
                        (call-with-values (thunk (split-path x)) 
                          (lambda (z path y)
-                            (user (path->string path) (build-path (problem-set-dir ps) path)))))
+                            (group (string->users (path->string path)) 
+                                   (build-path (problem-set-dir ps) path)))))
                  (directory-list (build-path (server-dir) (problem-set-dir ps))))]
          [users (shuffle users)]
          [graders (shuffle (graders))]
@@ -118,17 +86,19 @@
   (parameterize ([server-dir "/tmp"]
                  [graders (list (grader "grader1" "grader1" "wilbowma@ccs.neu.edu")
                                 (grader "grader2" "grader2" "wilbowma@ccs.neu.edu"))])
-    (for-each (compose make-directory* (curry build-path "/tmp/test") symbol->string)
+
+    (for-each (compose (lambda (x) (unless (directory-exists? x)
+                                     (make-directory* x))) 
+                 (curry build-path "/tmp/test") 
+                 symbol->string)
       '(test1 test2 test3 test4 test5 test6))
     (check-equal? 
       (length (assign-graders (problem-set "Test" "test")))
       2)
     (check-equal?
-      (length (grader-assignment-users (car (assign-graders (problem-set "Test" "test")))))
+      (length (grader-assignment-groups (car (assign-graders (problem-set "Test" "test")))))
       3))
-  (delete-directory/files "/tmp/test")
-  #;(for-each (compose delete-directory (curry build-path "/tmp/test"))
-            '(test1 test2 test3 test4 test5 test6)))
+  (delete-directory/files "/tmp/test"))
 
 ;; taken from http://stackoverflow.com/questions/8725832/how-to-split-list-into-evenly-sized-chunks-in-racket-scheme
 (define (split-into-chunks n xs)
@@ -156,7 +126,7 @@
                       (problem-set-name (grader-assignment-ps gra)))])
        (parameterize ([current-directory (server-dir)])
          (apply (curry tar-gzip file)
-                (map user-dir (grader-assignment-users gra))))
+                (map group-dir (grader-assignment-groups gra))))
        file))
 
 (module+ test
@@ -164,7 +134,12 @@
   (parameterize ([server-dir "/tmp/"]
                  [graders (list (grader "grader1" "grader1" "wilbowma@ccs.neu.edu")
                                 (grader "grader2" "grader2" "wilbowma@ccs.neu.edu"))])
-    (for-each (compose (lambda (dir) (make-directory* dir) (with-output-to-file (build-path dir "handin.rkt") (thunk (display 120)))) (curry build-path "/tmp/test") symbol->string)
+    (for-each (compose (lambda (dir) 
+                         (unless (directory-exists? dir) (make-directory* dir))
+                         (with-output-to-file (build-path dir "handin.rkt")
+                           (thunk (display 120))
+                           #:exists 'truncate/replace)) 
+                       (curry build-path "/tmp/test") symbol->string)
       '(test1 test2 test3 test4 test5 test6))
     (let* ([ps (problem-set "Test" "test")]
            [files (map tar-assignments (assign-graders ps))])
@@ -241,64 +216,64 @@
 ;;
 ;; eventually, I'd like just
 ;; Attachments: graded-<problem-set-name>.tar.gz
-(define (get-graded-problem-set ps) 
-  (let-values ([(ic total new) (imap-connect (imap-server) (imap-user)
-                                             (imap-passwd) (imap-mailbox))])
-    ;; TODO: Add missing/duplicate grader to error message
-    (if (> total (length graders))
-        (error "More grades than graders")
-        (error "Not enough graders"))
-    (let* ([msg-nums (iota total 1 1)]
-           [headers (imap-get-message ic msg-nums 'header)]
-           [from (map (compose (curry extract-field "From") second)
-                      headers)]
-           [subjects (map (compose (curry extract-field "Subject") second) 
-                          headers)]
-           [messages (map (compose mime-analyze open-input-string) 
-                      (imap-get-message ic msg-nums 'body))])
-      (map 
-        (lambda (msg from)
-          (unless (eq? (entity-type (message-entity msg)) 'multipart)
-            (errorf "Missing attachment from ~a" from))
-          (let ([parts (filter-attachments (entity-parts (message-entity msg)))])
-               (map verify-part-filenames parts)
-            (map extract-attachment-from-part! parts)))
-        messages from)
-
-      (imap-copy ic msg-nums (imap-done-mailbox))
-      (imap-store ic '+ msg-nums (list (symbol->imap-flag 'deleted)))
-      (imap-expunge ic)))
-  (void))
-
-;; filter-attachments
-;; (listof message) -> (listof message)
-;; filter out any message whose entity-disposition disposition-type is
-;; not 'attachment
-(define (filter-attachments msgs)
-  (filter (lambda (msg) 
-            (compose 
-              (lambda (x) 
-                (and x (eq?  (disposition-type x) 'attachment)))
-              entity-dispostion message-entity)) msgs))
-
-;; extract-attachment-from-part
-;; message -> path
-;; given a part of a message whose disposition is type 'attachment,
-;; extract the attachment and save it to /tmp.
-(define (extract-attachment-from-part! part)
-  (let* ([et (message-entity part)]
-         [path (build-path "/tmp" ((disposition-filename
-                                     (entity-disposition part))))])
-    (entity-body (open-file-output-port path))
-    path))
-
-(define (verify-part-filenames! parts)
-  (match (map (compose disposition-filename entity-disposition
-                message-entity) parts)
-    [(list-no-order (regexp #rx"[\w\.-]+-grades.rkt" a) 
-       (regexp #rx"graded-[\w\.-]+-[\w\.-].tar.gz" b) #f)
-     (list a b)]
-    [_ (errorf "Message does not contain correct attachments: ~a" from)]))
+;; (define (get-graded-problem-set ps) 
+;;   (let-values ([(ic total new) (imap-connect (imap-server) (imap-user)
+;;                                              (imap-passwd) (imap-mailbox))])
+;;     ;; TODO: Add missing/duplicate grader to error message
+;;     (if (> total (length graders))
+;;         (error "More grades than graders")
+;;         (error "Not enough graders"))
+;;     (let* ([msg-nums (iota total 1 1)]
+;;            [headers (imap-get-message ic msg-nums 'header)]
+;;            [from (map (compose (curry extract-field "From") second)
+;;                       headers)]
+;;            [subjects (map (compose (curry extract-field "Subject") second) 
+;;                           headers)]
+;;            [messages (map (compose mime-analyze open-input-string) 
+;;                       (imap-get-message ic msg-nums 'body))])
+;;       (map 
+;;         (lambda (msg from)
+;;           (unless (eq? (entity-type (message-entity msg)) 'multipart)
+;;             (errorf "Missing attachment from ~a" from))
+;;           (let ([parts (filter-attachments (entity-parts (message-entity msg)))])
+;;                (map verify-part-filenames parts)
+;;             (map extract-attachment-from-part! parts)))
+;;         messages from)
+;; 
+;;       (imap-copy ic msg-nums (imap-done-mailbox))
+;;       (imap-store ic '+ msg-nums (list (symbol->imap-flag 'deleted)))
+;;       (imap-expunge ic)))
+;;   (void))
+;; 
+;; ;; filter-attachments
+;; ;; (listof message) -> (listof message)
+;; ;; filter out any message whose entity-disposition disposition-type is
+;; ;; not 'attachment
+;; (define (filter-attachments msgs)
+;;   (filter (lambda (msg) 
+;;             (compose 
+;;               (lambda (x) 
+;;                 (and x (eq?  (disposition-type x) 'attachment)))
+;;               entity-dispostion message-entity)) msgs))
+;; 
+;; ;; extract-attachment-from-part
+;; ;; message -> path
+;; ;; given a part of a message whose disposition is type 'attachment,
+;; ;; extract the attachment and save it to /tmp.
+;; (define (extract-attachment-from-part! part)
+;;   (let* ([et (message-entity part)]
+;;          [path (build-path "/tmp" ((disposition-filename
+;;                                      (entity-disposition part))))])
+;;     (entity-body (open-file-output-port path))
+;;     path))
+;; 
+;; (define (verify-part-filenames! parts)
+;;   (match (map (compose disposition-filename entity-disposition
+;;                 message-entity) parts)
+;;     [(list-no-order (regexp #px"[\\w\\.-]+-grades.rkt" a) 
+;;        (regexp #px"graded-[\\w\\.-]+-[\\w\\.-].tar.gz" b) #f)
+;;      (list a b)]
+;;     [_ (errorf "Message does not contain correct attachments: ~a" from)]))
 
 ;; parse-graded-problem-set
 ;; path -> (listof grade-entry)
