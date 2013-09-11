@@ -1,23 +1,23 @@
 #lang racket
 ;; TODO: clean up
 ;; TODO: Somethings are fragile with respect to paths, current directory
-(require racket/match
-         file/tar
-         net/smtp
-         net/base64
-         openssl
-         net/head
-         net/imap
-         net/mime
-         srfi/1
-         "gradebook.rkt"
-         "config.rkt")
-(provide send-assignments-to-graders
-         ;grader-assignment
-         ;grader
-         ;email-grader
-         sanity-check-grades
-         post-grades)
+(require 
+  file/tar
+  net/smtp
+  net/base64
+  openssl
+  net/head
+  net/mime
+  srfi/1
+  "gradebook.rkt"
+  "config.rkt")
+(provide
+  send-assignments-to-graders
+  ;grader-assignment
+  ;grader
+  ;email-grader
+  sanity-check-grades
+  post-grades)
 
 ;; grader x (listof group)
 (struct grader-assignment (grader ps groups) #:prefab)
@@ -72,7 +72,7 @@
                        (call-with-values (thunk (split-path x)) 
                          (lambda (z path y)
                             (group (string->users (path->string path)) 
-                                   (build-path (problem-set-dir ps) path)))))
+                                   (build-path (problem-set-dir ps) path "grading")))))
                  (directory-list (build-path (server-dir) (problem-set-dir ps))))]
          [users (shuffle users)]
          [graders (shuffle (graders))]

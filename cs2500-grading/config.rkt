@@ -18,6 +18,8 @@
 ;; string
 (define server-dir (make-parameter (get-config 'server-dir)))
 ;; string
+(define grade-server-dir (make-parameter (get-config 'grade-server-dir)))
+;; string
 (define smtp-server (make-parameter (get-config 'smtp-server)))
 ;; string
 (define smtp-port (make-parameter (get-config 'smtp-port)))
@@ -27,12 +29,10 @@
 ;; grader-name, problem-set-name -> string
 (define message-body (make-parameter (eval (get-config 'message-body)
                                            (make-base-namespace))))
-;; string
-(define grade-server-dir (make-parameter (get-config 'grade-server-dir)))
 
 ;; TODO: Make parameters
 (define gradebook-path (build-path (current-directory) "gradebook.rktd"))
-(define users-path (build-path (server-dir) "roster.rktd"))
+(define students-path (build-path (server-dir) "users.rktd"))
 (define graders-path (build-path (current-directory) "graders.rktd"))
 (define server-config-path (build-path (server-dir) "config.rktd"))
 
