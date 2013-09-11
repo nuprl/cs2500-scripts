@@ -9,6 +9,10 @@
   problem-set-dir
   problem-set-start-date
   problem-set-end-date
+
+  problem-sets
+  
+  active-problem-sets
   
   refresh-problem-sets
   write-problem-sets!
@@ -20,18 +24,24 @@
 ;; must be read-able and write-able
 (struct problem-set (name dir start-date end-date) #:prefab)
 
+(define problem-sets 
+  (make-parameter (with-input-from-file (problem-sets-path) read)))
+
 ;; refresh-problem-sets
 ;; (listof problem-set) -> (listof problem-set) (listof problem-set)
 ;; given a list of all problem sets, returns a list of active problem
 ;; sets (first value) and a list of inactive problem sets (second value)
 (define (refresh-problem-sets pss)
   (let* ([date (date->seconds (current-date))]
-         [active (filter (lambda (ps) 
-                           (and (>= date (problem-set-start-date ps))
-                             (< date (problem-set-end-date ps))))
-                         pss)]
+         [active (active-problems pss)]
          [inactive (remove* active pss)])
     (values active inactive)))
+
+(define (active-problems pss)
+  (filter (lambda (ps) 
+                  (and (>= date (problem-set-start-date ps))
+                    (< date (problem-set-end-date ps))))
+          pss))
 
 (module+ test
   (require rackunit)
