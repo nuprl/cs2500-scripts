@@ -10,6 +10,9 @@
   net/mime
   srfi/1
   "gradebook.rkt"
+  "students.rkt"
+  "graders.rkt"
+  "problem-set.rkt"
   "config.rkt")
 (provide
   send-assignments-to-graders
@@ -60,7 +63,7 @@
                            #:exists 'truncate/replace)) 
                        (curry build-path "/tmp/test") symbol->string)
       '(test1 test2 test3 test4 test5 test6))
-    (send-assignments-to-graders (problem-set "test" "test")))
+    (send-assignments-to-graders (problem-set "test" "test" 1234 1234)))
   (delete-directory/files "/tmp/test"))
 
 ;; assign-graders
@@ -72,7 +75,7 @@
                        (call-with-values (thunk (split-path x)) 
                          (lambda (z path y)
                             (group (string->students (path->string path)) 
-                                   (build-path (problem-set-dir ps) path "grading")))))
+                                   (build-path (problem-set-dir ps) path)))))
                  (directory-list (build-path (server-dir) (problem-set-dir ps))))]
          [users (shuffle users)]
          [graders (shuffle (graders))]
@@ -93,10 +96,13 @@
                  symbol->string)
       '(test1 test2 test3 test4 test5 test6))
     (check-equal? 
-      (length (assign-graders (problem-set "Test" "test")))
+      (length (assign-graders (problem-set "Test" "test" 1234 1234)))
       2)
     (check-equal?
-      (length (grader-assignment-groups (car (assign-graders (problem-set "Test" "test")))))
+      (length (grader-assignment-groups (car (assign-graders
+                                               (problem-set "Test"
+                                                            "test" 1234
+                                                            1234)))))
       3))
   (delete-directory/files "/tmp/test"))
 
@@ -141,7 +147,7 @@
                            #:exists 'truncate/replace)) 
                        (curry build-path "/tmp/test") symbol->string)
       '(test1 test2 test3 test4 test5 test6))
-    (let* ([ps (problem-set "Test" "test")]
+    (let* ([ps (problem-set "Test" "test" 1234 1234)]
            [files (map tar-assignments (assign-graders ps))])
       (map (lambda (file) (check-true (file-exists? file))) files)
       (map delete-file files))

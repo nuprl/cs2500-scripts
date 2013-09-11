@@ -16,21 +16,21 @@
 ;; string x string x string
 (struct student (username name email) #:prefab)
 
-;; students 
-;; -> (listof student)
-;; (listof student) -> void
-(define students (make-parameter (read-students)))
-
 ;; read-students
 ;; -> (listof student)
 ;; reads and parses the list of students from students-path
 (define (read-students)
   (let ([users-raw (with-input-from-file students-path read)])
     (map (lambda (raw) 
-           (student (first raw)
-                 (second (cdr raw))
-                 (fourth (cdr raw)))) 
+           (student (car raw)
+              (second (second raw))
+              (fourth (second raw)))) 
          users-raw)))
+
+;; students 
+;; -> (listof student)
+;; (listof student) -> void
+(define students (make-parameter (read-students)))
 
 ;; symbol->students
 ;; symbol -> (listof student)
