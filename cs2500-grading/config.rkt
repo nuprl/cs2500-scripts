@@ -34,3 +34,6 @@
 (define gradebook-path (build-path (current-directory) "gradebook.rktd"))
 (define users-path (build-path (server-dir) "roster.rktd"))
 (define graders-path (build-path (current-directory) "graders.rktd"))
+(define server-config-path (build-path (server-dir) "config.rktd"))
+
+(define problem-sets-path (make-parameter (build-path (current-directory) (get-config 'problem-sets-path))))

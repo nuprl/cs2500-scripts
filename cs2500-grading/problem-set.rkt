@@ -1,12 +1,68 @@
 #lang racket
 ;; TODO: test
-;; Maybe this is too abstract and can be merged with gradebook...
-(require "config.rkt")
+(require 
+  racket/date
+  "config.rkt")
 (provide
   problem-set
   problem-set-name
-  problem-set-dir)
+  problem-set-dir
+  problem-set-start-date
+  problem-set-end-date
+  
+  refresh-problem-sets
+  write-problem-sets!
+  write-current-problem-sets!
 
-;; name (string) x dir (string)
+  gen-problem-sets)
+
+;; name (string) x dir (string) x exact-integer x exact-integer
 ;; must be read-able and write-able
-(struct problem-set (name dir) #:prefab)
+(struct problem-set (name dir start-date end-date) #:prefab)
+
+;; refresh-problem-sets
+;; (listof problem-set) -> (listof problem-set) (listof problem-set)
+;; given a list of all problem sets, returns a list of active problem
+;; sets (first value) and a list of inactive problem sets (second value)
+(define (refresh-problem-sets ls)
+  (let* ([active (filter (lambda (ps) (and (> (problem-set-start-date ps) date)
+                                       (< problem-set-end-date ps))) ls)]
+         [inactive (remove* ls active)])
+    (values active inactive)))
+
+;; write-problem-sets!
+;; (listof problem-set) (listof problem-set) -> (void)
+;; writes the active and inactive sets to the server configuration file
+(define (write-problem-sets! active inactive)
+  (let ([conf (filter (lambda (x) (not (memq (car x) '(active-dirs inactive-dirs)))) (with-input-from-file server-config-path read))])
+    (with-output-to-file 
+      server-config-path
+      (thunk (pretty-write 
+               (append (list (cons 'active-dirs (map problem-set-dir active))
+                  (cons 'inactive-dirs (map problem-set-dir inactive)))
+                       conf))))))
+;; write-current-problem-sets!
+;; (void) -> (void)
+;; refreshs the problem sets stored in problem-sets-path, and
+;; writes them to the server config file.
+(define (write-current-problem-sets!)
+  (call-with-values 
+    (thunk (refresh-problem-sets (with-input-from-file (problem-sets-path) read)))
+    write-problem-sets!))
+
+;; gen-problem-sets
+;; exact-integer natrual -> (listof problem-set)
+;; generates problem sets with name and dir (format "ps~a" i) for i = 1
+;; to n. The first problem set will become active on date d, and
+;; remain active until exactly 7 days later
+(define (gen-problem-sets d n)
+  (let ([names/dirs (build-list n (compose (curry format "ps~a") add1))]
+        [start-dates (build-list n (lambda (n) (add-days d (* n 7))))]
+        [end-dates (build-list n (lambda (n) (add-days d (* (add1 n) 7))))])
+    (map (lambda (name start end) (problem-set name name start end))
+      names/dirs
+      start-dates
+      end-dates)))
+
+(define (add-days d days)
+  (+ d (* days 24 60 60)))
