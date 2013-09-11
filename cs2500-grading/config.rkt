@@ -32,7 +32,7 @@
 
 ;; TODO: Make parameters
 (define gradebook-path (build-path (current-directory) "gradebook.rktd"))
-(define users-path (build-path (server-dir) "roster.rktd"))
+(define students-path (build-path (server-dir) "users.rktd"))
 (define graders-path (build-path (current-directory) "graders.rktd"))
 (define server-config-path (build-path (server-dir) "config.rktd"))
 
