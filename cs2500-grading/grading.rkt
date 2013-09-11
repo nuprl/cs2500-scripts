@@ -204,81 +204,10 @@
                      #:auth-user (smtp-user)
                      #:auth-passwd (smtp-passwd))))
 
-;; get-graded-problem-set
-;; problem-set -> (listof path)
-;; retrieves graded problem sets from IMAP server by looking in (grade-mail-box) for emails matching the below format. problem sets are saved to /tmp
-;;
-;; To: (head-ta-email)
-;; From: doesn't matter
-;; Subject: (course-name) Graded <problem-set-name>
-;; Body: doesn't matter
-;; Attachments: grades.rkt, graded-<grader-username>-<problem-set-name>.tar.gz
-;;
-;; eventually, I'd like just
-;; Attachments: graded-<problem-set-name>.tar.gz
-;; (define (get-graded-problem-set ps) 
-;;   (let-values ([(ic total new) (imap-connect (imap-server) (imap-user)
-;;                                              (imap-passwd) (imap-mailbox))])
-;;     ;; TODO: Add missing/duplicate grader to error message
-;;     (if (> total (length graders))
-;;         (error "More grades than graders")
-;;         (error "Not enough graders"))
-;;     (let* ([msg-nums (iota total 1 1)]
-;;            [headers (imap-get-message ic msg-nums 'header)]
-;;            [from (map (compose (curry extract-field "From") second)
-;;                       headers)]
-;;            [subjects (map (compose (curry extract-field "Subject") second) 
-;;                           headers)]
-;;            [messages (map (compose mime-analyze open-input-string) 
-;;                       (imap-get-message ic msg-nums 'body))])
-;;       (map 
-;;         (lambda (msg from)
-;;           (unless (eq? (entity-type (message-entity msg)) 'multipart)
-;;             (errorf "Missing attachment from ~a" from))
-;;           (let ([parts (filter-attachments (entity-parts (message-entity msg)))])
-;;                (map verify-part-filenames parts)
-;;             (map extract-attachment-from-part! parts)))
-;;         messages from)
-;; 
-;;       (imap-copy ic msg-nums (imap-done-mailbox))
-;;       (imap-store ic '+ msg-nums (list (symbol->imap-flag 'deleted)))
-;;       (imap-expunge ic)))
-;;   (void))
-;; 
-;; ;; filter-attachments
-;; ;; (listof message) -> (listof message)
-;; ;; filter out any message whose entity-disposition disposition-type is
-;; ;; not 'attachment
-;; (define (filter-attachments msgs)
-;;   (filter (lambda (msg) 
-;;             (compose 
-;;               (lambda (x) 
-;;                 (and x (eq?  (disposition-type x) 'attachment)))
-;;               entity-dispostion message-entity)) msgs))
-;; 
-;; ;; extract-attachment-from-part
-;; ;; message -> path
-;; ;; given a part of a message whose disposition is type 'attachment,
-;; ;; extract the attachment and save it to /tmp.
-;; (define (extract-attachment-from-part! part)
-;;   (let* ([et (message-entity part)]
-;;          [path (build-path "/tmp" ((disposition-filename
-;;                                      (entity-disposition part))))])
-;;     (entity-body (open-file-output-port path))
-;;     path))
-;; 
-;; (define (verify-part-filenames! parts)
-;;   (match (map (compose disposition-filename entity-disposition
-;;                 message-entity) parts)
-;;     [(list-no-order (regexp #px"[\\w\\.-]+-grades.rkt" a) 
-;;        (regexp #px"graded-[\\w\\.-]+-[\\w\\.-].tar.gz" b) #f)
-;;      (list a b)]
-;;     [_ (errorf "Message does not contain correct attachments: ~a" from)]))
-
 ;; parse-graded-problem-set
 ;; path -> (listof grade-entry)
 ;; parses a graded-<problem-set-name>.tar.gz to a (listof grade-entry)
-;; (define (parse-graded-problem-set path) (void))
+(define (parse-graded-problem-set path) (void))
 
 ;; sanity-check-grades
 ;; problem-set, (listof grade-entry) -> report??

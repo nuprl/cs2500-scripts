@@ -27,6 +27,8 @@
 ;; grader-name, problem-set-name -> string
 (define message-body (make-parameter (eval (get-config 'message-body)
                                            (make-base-namespace))))
+;; string
+(define grade-server-dir (make-parameter (get-config 'grade-server-dir)))
 
 ;; TODO: Make parameters
 (define gradebook-path (build-path (current-directory) "gradebook.rktd"))
