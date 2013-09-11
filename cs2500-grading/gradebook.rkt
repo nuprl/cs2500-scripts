@@ -3,6 +3,7 @@
 (require 
   "config.rkt"
   "graders.rkt"
+  "students.rkt"
   "problem-set.rkt")
 (provide
   grade-entry
