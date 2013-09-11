@@ -27,20 +27,20 @@
 (define (read-students)
   (let ([users-raw (with-input-from-file students-path read)])
     (map (lambda (raw) 
-           (user (first raw)
+           (student (first raw)
                  (second (cdr raw))
                  (fourth (cdr raw)))) 
          users-raw)))
 
 ;; symbol->students
-;; symbol -> (listof user)
+;; symbol -> (listof student)
 ;; given a symbol of usernames seperated by #\+, return the list of
-;; users 
+;; students 
 (define (symbol->students s) (string->students (symbol->string s)))
 
 (define (string->students s)
   (let ([usernames (string-split s "+")])
-    (filter (lambda (student) (memq (student-username user) usernames)) (students))))
+    (filter (lambda (student) (memq (student-username student) usernames)) (students))))
 
 ;; symbol->student
 ;; assumes s represents a single username
