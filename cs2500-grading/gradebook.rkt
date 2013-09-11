@@ -30,7 +30,7 @@
 ;; saves a gradebook to the gradebook-path, overwriting any current
 ;; gradebook.
 (define (save-gradebook! gradebook)
-  (with-output-to-file gradebook-path (write grades) #:exists
+  (with-output-to-file gradebook-path (thunk (write gradebook)) #:exists
   'truncate/replace))
 
 ;; append-to-gradebook!
