@@ -71,7 +71,7 @@
   (let* ([users (map (lambda (x) 
                        (call-with-values (thunk (split-path x)) 
                          (lambda (z path y)
-                            (group (string->users (path->string path)) 
+                            (group (string->students (path->string path)) 
                                    (build-path (problem-set-dir ps) path "grading")))))
                  (directory-list (build-path (server-dir) (problem-set-dir ps))))]
          [users (shuffle users)]
