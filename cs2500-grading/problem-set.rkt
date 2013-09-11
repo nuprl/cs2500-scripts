@@ -25,7 +25,9 @@
 (struct problem-set (name dir start-date end-date) #:prefab)
 
 (define problem-sets 
-  (make-parameter (with-input-from-file (problem-sets-path) read)))
+  (make-parameter 
+    (filter (lambda (x) (not (string=? "test" (problem-set-name x))))
+      (with-input-from-file (problem-sets-path) read))))
 
 ;; refresh-problem-sets
 ;; (listof problem-set) -> (listof problem-set) (listof problem-set)
