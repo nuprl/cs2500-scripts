@@ -28,7 +28,7 @@
 (struct group (users dir) #:prefab)
 
 ;; send-assignments-to-graders
-;; problem-set ... -> void
+;; (problem-set) -> void
 ;; assigns graders in tutors.txt a rougly equal number of assignments
 ;; to grade from each problem-set. each grader is sent a seperate email
 ;; for each problem-set.
@@ -44,7 +44,7 @@
 ;; <problem-set>.tar.gz will contain a folder named <username> for
 ;; each student. The folder will contain all material handed in for
 ;; <problem-set>
-(define (send-assignments-to-graders . problem-sets)
+(define (send-assignments-to-graders problem-sets)
   (let* ([gras (flatten (map assign-graders problem-sets))]
          [files (map tar-assignments gras)]) 
     (for-each email-grader gras files)
@@ -63,7 +63,7 @@
                            #:exists 'truncate/replace)) 
                        (curry build-path "/tmp/test") symbol->string)
       '(test1 test2 test3 test4 test5 test6))
-    (send-assignments-to-graders (problem-set "test" "test" 1234 1234)))
+    (send-assignments-to-graders (list (problem-set "test" "test" 1234 1234))))
   (delete-directory/files "/tmp/test"))
 
 ;; assign-graders
