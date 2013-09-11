@@ -33,11 +33,11 @@
 ;; sets (first value) and a list of inactive problem sets (second value)
 (define (refresh-problem-sets pss)
   (let* ([date (date->seconds (current-date))]
-         [active (active-problems pss)]
+         [active (active-problem-sets pss)]
          [inactive (remove* active pss)])
     (values active inactive)))
 
-(define (active-problems pss)
+(define (active-problem-sets pss)
   (filter (lambda (ps) 
                   (and (>= date (problem-set-start-date ps))
                     (< date (problem-set-end-date ps))))
