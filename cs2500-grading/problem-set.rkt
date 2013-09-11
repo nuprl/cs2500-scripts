@@ -24,11 +24,25 @@
 ;; (listof problem-set) -> (listof problem-set) (listof problem-set)
 ;; given a list of all problem sets, returns a list of active problem
 ;; sets (first value) and a list of inactive problem sets (second value)
-(define (refresh-problem-sets ls)
-  (let* ([active (filter (lambda (ps) (and (> (problem-set-start-date ps) date)
-                                       (< problem-set-end-date ps))) ls)]
-         [inactive (remove* ls active)])
+(define (refresh-problem-sets pss)
+  (let* ([date (date->seconds (current-date))]
+         [active (filter (lambda (ps) 
+                           (and (>= date (problem-set-start-date ps))
+                             (< date (problem-set-end-date ps))))
+                         pss)]
+         [inactive (remove* active pss)])
     (values active inactive)))
+
+(module+ test
+  (require rackunit)
+  (define psls (gen-problem-sets (date->seconds (current-date)) 5))
+  (pretty-write psls)
+  (check-equal? (length psls) 5)
+  (check-true (andmap problem-set? psls))
+  (let-values ([(active inactive) (refresh-problem-sets psls)])
+    (check-equal? (length active) 1)
+    (check-equal? (length inactive) 4)) 
+  )
 
 ;; write-problem-sets!
 ;; (listof problem-set) (listof problem-set) -> (void)
@@ -38,9 +52,10 @@
     (with-output-to-file 
       server-config-path
       (thunk (pretty-write 
-               (append (list (cons 'active-dirs (map problem-set-dir active))
-                  (cons 'inactive-dirs (map problem-set-dir inactive)))
-                       conf))))))
+               (append (list `(active-dirs ,(map problem-set-dir active))
+                  `(inactive-dirs ,(map problem-set-dir inactive)))
+                       conf)))
+      #:exists 'replace)))
 ;; write-current-problem-sets!
 ;; (void) -> (void)
 ;; refreshs the problem sets stored in problem-sets-path, and
