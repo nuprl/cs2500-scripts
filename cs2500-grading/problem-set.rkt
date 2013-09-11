@@ -32,21 +32,20 @@
 ;; given a list of all problem sets, returns a list of active problem
 ;; sets (first value) and a list of inactive problem sets (second value)
 (define (refresh-problem-sets pss)
-  (let* ([date (date->seconds (current-date))]
-         [active (active-problem-sets pss)]
+  (let* ( [active (active-problem-sets pss)]
          [inactive (remove* active pss)])
     (values active inactive)))
 
 (define (active-problem-sets pss)
-  (filter (lambda (ps) 
-                  (and (>= date (problem-set-start-date ps))
-                    (< date (problem-set-end-date ps))))
-          pss))
+  (let ([date (date->seconds (current-date))])
+    (filter (lambda (ps) 
+               (and (>= date (problem-set-start-date ps))
+                 (< date (problem-set-end-date ps))))
+       pss)))
 
 (module+ test
   (require rackunit)
   (define psls (gen-problem-sets (date->seconds (current-date)) 5))
-  (pretty-write psls)
   (check-equal? (length psls) 5)
   (check-true (andmap problem-set? psls))
   (let-values ([(active inactive) (refresh-problem-sets psls)])
