@@ -2,12 +2,12 @@
 (require net/smtp
          net/head
          openssl
-         "cs2500-grading/config.rkt"
-         "cs2500-grading/students.rkt")
+         "cs2500-scripts/config.rkt"
+         "cs2500-scripts/students.rkt")
 (provide validate-users)
 
-;; TODO: Abstract, move to cs2500-grading
-;; TODO: rename cs2500-grading to cs2500-scripts
+;; TODO: Abstract, move to cs2500-scripts
+;; TODO: rename cs2500-scripts to cs2500-scripts
 
 ;; users = (listof (username (listof any/c)))
 ;; roster = (listof (username realname))
