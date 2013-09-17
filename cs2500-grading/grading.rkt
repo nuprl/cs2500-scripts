@@ -195,7 +195,7 @@
                      (list to-addr)
                      (append-headers 
                        (standard-message-header 
-                           (head-ta-email) (list to-addr) (list) (list) 
+                           (head-ta-email) (list to-addr) (head-ta-email) (list) 
                            (format "~a Grading, ~a" (course-name) (problem-set-name ps)))
                        (insert-field 
                          "MIME-Version"
