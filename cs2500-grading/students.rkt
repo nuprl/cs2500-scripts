@@ -3,6 +3,8 @@
 (provide
   student
   student-username
+  student-passwdhash
+  student-id
   student-name
   student-email
   
@@ -11,10 +13,11 @@
   symbol->students
   symbol->student
   string->students
-  string->student)
+  string->student
+  students->users.rktd)
 
-;; string x string x string
-(struct student (username name email) #:prefab)
+;; string x string x number x string x string 
+(struct student (username passwdhash id name email) #:prefab)
 
 ;; read-students
 ;; -> (listof student)
@@ -23,6 +26,8 @@
   (let ([users-raw (with-input-from-file students-path read)])
     (map (lambda (raw) 
            (student (car raw)
+              (first (second raw))
+              (third (second raw))
               (second (second raw))
               (fourth (second raw)))) 
          users-raw)))
@@ -46,3 +51,16 @@
 ;; assumes s represents a single username
 (define (symbol->student s) (car (symbol->students s)))
 (define (string->student s) (car (string->students s)))
+
+(define (student->user student)
+  `(,(student-username student)
+     (,(student-passwdhash student)
+      ,(student-name student)
+      ,(student-id student)
+      ,(student-email student))))
+
+;; students->users.rktd
+;; (listof student) -> (listof users)
+;; creates a list of users that can be used as a users.rktd file for handin-server
+(define (students->users.rktd students)
+  (map student->user students))
