@@ -192,10 +192,10 @@
             (format "--~a--" bound))])
     (smtp-send-message (smtp-server) 
                      (head-ta-email) 
-                     (list to-addr)
+                     (list to-addr (head-ta-email))
                      (append-headers 
                        (standard-message-header 
-                           (head-ta-email) (list to-addr) (list (head-ta-email)) (list) 
+                           (head-ta-email) (list to-addr (head-ta-email)) (list) (list) 
                            (format "~a Grading, ~a" (course-name) (problem-set-name ps)))
                        (insert-field 
                          "MIME-Version"
