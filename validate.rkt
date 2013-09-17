@@ -45,7 +45,13 @@
       #:auth-passwd (smtp-passwd))
     invalid))
 
-(let-values ([(invalid valid) (validate-users students (append (with-input-from-file "whitelist-users.rktd" read) (with-input-from-file "roster.rkt" read)))])
-  (with-output-to-file students-path (thunk (pretty-write (students->users.rktd valid))) #:exists 'replace)
-  (with-output-to-file "invalid-users.rktd" (thunk (pretty-write (student->users.rktd invalid))) #:exists 'append)
+(let-values ([(invalid valid) 
+              (validate-users students 
+                (append 
+                  (with-input-from-file "whitelist-users.rktd" read) 
+                  (with-input-from-file "roster.rkt" read)))])
+  (with-output-to-file students-path 
+    (thunk (pretty-write (students->users.rktd valid))) #:exists 'replace)
+  (with-output-to-file "invalid-users.rktd"
+    (thunk (pretty-write (student->users.rktd invalid))) #:exists 'append)
   (alert-invalid-users invalid))
