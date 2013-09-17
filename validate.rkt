@@ -6,9 +6,8 @@
          "cs2500-scripts/students.rkt")
 (provide validate-users)
 
-;; TODO: Abstract, move to cs2500-scripts
-;; TODO: rename cs2500-scripts to cs2500-scripts
-
+;; TODO: Fix data definitions
+;; Add sanity checks for files
 ;; users = (listof (username (listof any/c)))
 ;; roster = (listof (username realname))
 ;; username = string
@@ -47,6 +46,6 @@
     invalid))
 
 (let-values ([(invalid valid) (validate-users students (append (with-input-from-file "whitelist-users.rktd" read) (with-input-from-file "roster.rkt" read)))])
-  (with-output-to-file "users.rktd" (thunk (pretty-write (students->users.rktd valid))) #:exists 'replace)
+  (with-output-to-file students-path (thunk (pretty-write (students->users.rktd valid))) #:exists 'replace)
   (with-output-to-file "invalid-users.rktd" (thunk (pretty-write (student->users.rktd invalid))) #:exists 'append)
   (alert-invalid-users invalid))
