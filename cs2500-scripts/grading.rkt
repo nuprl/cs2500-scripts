@@ -2,7 +2,7 @@
 ;; TODO: clean up
 ;; TODO: Somethings are fragile with respect to paths, current directory
 (require 
-  file/tar
+  file/zip
   net/smtp
   net/base64
   openssl
@@ -39,9 +39,9 @@
 ;; From: <head-ta-email>
 ;; Subject: <course-name> Grading, <problem-set>
 ;; Body: <any>
-;; Attachments: <problem-set>.tar.gz
+;; Attachments: <problem-set>.zip
 ;; 
-;; <problem-set>.tar.gz will contain a folder named <username> for
+;; <problem-set>.zip will contain a folder named <username> for
 ;; each student. The folder will contain all material handed in for
 ;; <problem-set>
 (define (send-assignments-to-graders problem-sets)
@@ -121,17 +121,17 @@
 
 
 ;; tar-assignments
-;; grader-assignment -> path to <problem-set>.tar.gz
+;; grader-assignment -> path to <problem-set>.zip
 ;; given a grader-assignment, create
-;; <problem-set>.tar.gz that contains a folder named <username-string>
+;; <problem-set>.zip that contains a folder named <username-string>
 ;; for each student. This folder contains all material handed in for
 ;; <problem-set> in plain text.
 (define (tar-assignments gra)
-  (let ([file (format "/tmp/~a-~a.tar.gz"
+  (let ([file (format "/tmp/~a-~a.zip"
                       (grader-user (grader-assignment-grader gra)) 
                       (problem-set-name (grader-assignment-ps gra)))])
        (parameterize ([current-directory (server-dir)])
-         (apply (curry tar-gzip file)
+         (apply (curry zip file)
                 (map group-dir (grader-assignment-groups gra))))
        file))
 
