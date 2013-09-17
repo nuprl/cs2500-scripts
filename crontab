@@ -1,0 +1,2 @@
+01 19 * * * cd ../cs2500-scripts; /usr/bin/racket ../cs2500-scripts/refresh.rkt
+01 * * * * cd ../cs2500-scripts; /usr/bin/racket ../cs2500-scripts/validate.rkt
