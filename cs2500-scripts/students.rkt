@@ -7,6 +7,8 @@
   student-id
   student-name
   student-email
+  student-section
+  student-grader
   
   students
 
@@ -17,7 +19,7 @@
   students->users.rktd)
 
 ;; string x string x number x string x string 
-(struct student (username passwdhash id name email) #:prefab)
+(struct student (username passwdhash id name email section grade) #:prefab)
 
 ;; read-students
 ;; -> (listof student)
@@ -30,6 +32,8 @@
               (third (second raw))
               (second (second raw))
               (fourth (second raw)))) 
+              ""
+              ""
          users-raw)))
 
 ;; students 
@@ -57,7 +61,9 @@
      (,(student-passwdhash student)
       ,(student-name student)
       ,(student-id student)
-      ,(student-email student))))
+      ,(student-email student)
+      ,(student-section student)
+      ,(student-grader student))))
 
 ;; students->users.rktd
 ;; (listof student) -> (listof users)
