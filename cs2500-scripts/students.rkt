@@ -31,9 +31,9 @@
               (first (second raw))
               (third (second raw))
               (second (second raw))
-              (fourth (second raw)))) 
+              (fourth (second raw))
               ""
-              ""
+              ""))
          users-raw)))
 
 ;; students 
