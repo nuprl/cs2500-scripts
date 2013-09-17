@@ -34,7 +34,7 @@
 ;; given a list of all problem sets, returns a list of active problem
 ;; sets (first value) and a list of inactive problem sets (second value)
 (define (refresh-problem-sets pss)
-  (let* ( [active (active-problem-sets pss)]
+  (let* ([active (active-problem-sets pss)]
          [inactive (remove* active pss)])
     (values active inactive)))
 
