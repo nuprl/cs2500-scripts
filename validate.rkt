@@ -25,14 +25,14 @@
 ;; alert-invalid-users 
 ;; (listof users) -> void
 ;; sends an email to each of users alerting them to remake their account
-(define (alert-invalid-users users)
-  (for-each 
+(define (alert-invalid-users invalid)
+  (for-each (lambda (x) 
     (smtp-send-message
       (smtp-server)
       (head-ta-email)
-      (list (head-ta-email))
+      (list (head-ta-email) (student-email x))
       (standard-message-header 
-        (head-ta-email) (list (head-ta-email)) (list) (list) "Invalid CS2500 Handin account")
+        (head-ta-email) (list (head-ta-email) (student-email x)) (list) (list) "Invalid CS2500 Handin account")
       (list 
        (format "~a," (student-name x))
        ""
@@ -42,16 +42,16 @@
       #:tls-encode ports->ssl-ports
       #:port-no (smtp-port)
       #:auth-user (smtp-user)
-      #:auth-passwd (smtp-passwd))
+      #:auth-passwd (smtp-passwd)))
     invalid))
 
 (let-values ([(invalid valid) 
-              (validate-users students 
+              (validate-users (students) 
                 (append 
                   (with-input-from-file "whitelist-users.rktd" read) 
                   (with-input-from-file "roster.rkt" read)))])
   (with-output-to-file students-path 
     (thunk (pretty-write (students->users.rktd valid))) #:exists 'replace)
   (with-output-to-file "invalid-users.rktd"
-    (thunk (pretty-write (student->users.rktd invalid))) #:exists 'append)
+    (thunk (pretty-write (students->users.rktd invalid))) #:exists 'append)
   (alert-invalid-users invalid))
