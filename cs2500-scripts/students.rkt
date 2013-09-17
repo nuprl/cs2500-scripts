@@ -19,7 +19,7 @@
   students->users.rktd)
 
 ;; string x string x number x string x string 
-(struct student (username passwdhash id name email section grade) #:prefab)
+(struct student (username passwdhash id name email section grader) #:prefab)
 
 ;; read-students
 ;; -> (listof student)
