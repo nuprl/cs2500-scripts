@@ -81,8 +81,12 @@
 ;; generates problem sets with name and dir (format "ps~a" i) for i = 1
 ;; to n. The first problem set will become active on date d, and
 ;; remain active until exactly 7 days later
-(define (gen-problem-sets d n)
-  (let ([names/dirs (build-list n (compose (curry format "ps~a") add1))]
+(define (gen-problem-sets d n #:prefix [prefix "hw"])
+  (let ([names/dirs (build-list n (compose (curry format "~a~a" prefix) 
+                                           (lambda (x) (~a x #:width 2
+                                                           #:align 'right
+                                                           #:left-pad-string "0"))
+                                           add1))]
         [start-dates (build-list n (lambda (n) (add-days d (* n 7))))]
         [end-dates (build-list n (lambda (n) (add-days d (* (add1 n) 7))))])
     (map (lambda (name start end) (problem-set name name start end))
