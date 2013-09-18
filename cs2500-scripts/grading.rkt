@@ -8,7 +8,6 @@
   openssl
   net/head
   net/mime
-  srfi/1
   "gradebook.rkt"
   "students.rkt"
   "graders.rkt"
@@ -157,12 +156,12 @@
 
 ;; email-grader
 ;; grader-assignment, path -> void
-;; emails a grader their grading assignment, in the form of a .tar.gz containing their assignments
-(define (email-grader gra ps.tar.gz)
+;; emails a grader their grading assignment, in the form of a .zip containing their assignments
+(define (email-grader gra ps.zip)
   (let* ([grader (grader-assignment-grader gra)]
          [to-addr (grader-email grader)]
          [ps (grader-assignment-ps gra)]
-         [filename (call-with-values (thunk (split-path ps.tar.gz)) 
+         [filename (call-with-values (thunk (split-path ps.zip)) 
            (lambda (z path x) (path->string path)))]
         ;; TODO: This is awful -- fix net/smtp and net/sendmail to allow
         ;; attachments
@@ -187,7 +186,7 @@
             (format "Content-Disposition: attachment; filename=\"~a\"\r\n"
               filename)
             (with-output-to-string 
-              (thunk (base64-encode-stream (open-input-file ps.tar.gz) 
+              (thunk (base64-encode-stream (open-input-file ps.zip) 
                 (current-output-port))))
             (format "--~a--" bound))])
     (smtp-send-message (smtp-server) 
@@ -212,7 +211,7 @@
 
 ;; parse-graded-problem-set
 ;; path -> (listof grade-entry)
-;; parses a graded-<problem-set-name>.tar.gz to a (listof grade-entry)
+;; parses a graded-<problem-set-name>.zip to a (listof grade-entry)
 (define (parse-graded-problem-set path) (void))
 
 ;; sanity-check-grades
