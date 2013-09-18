@@ -57,6 +57,11 @@
                                 (grader "grader2" "grader2" "wilbowma@ccs.neu.edu"))])
     (for-each (compose (lambda (dir) 
                          (unless (directory-exists? dir) (make-directory* dir))
+                         (unless (directory-exists? (build-path dir "grading")) 
+                            (make-directory* (build-path dir "grading")))
+                         (with-output-to-file (build-path dir "grading" "text.rkt")
+                                              (thunk (display 120))
+                           #:exists 'truncate/replace)
                          (with-output-to-file (build-path dir "handin.rkt")
                            (thunk (display 120))
                            #:exists 'truncate/replace)) 
@@ -131,7 +136,12 @@
                       (problem-set-name (grader-assignment-ps gra)))])
        (parameterize ([current-directory (server-dir)])
          (apply (curry zip file)
-                (map group-dir (grader-assignment-groups gra))))
+                (append-map (compose (curry find-files 
+                                     (lambda (path) 
+                                       (or 
+                                         (regexp-match ".+handin.rkt" (path->string path))
+                                         (regexp-match ".+grading/text.rkt" (path->string path)))))
+                              group-dir) (grader-assignment-groups gra))))
        file))
 
 (module+ test
