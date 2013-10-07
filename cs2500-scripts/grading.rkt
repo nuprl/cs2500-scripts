@@ -82,11 +82,10 @@
                             (group (string->students (path->string path)) 
                                    (build-path (problem-set-dir ps) path)))))
                  (directory-list (build-path (server-dir) (problem-set-dir ps))))]
-         [users users]
-         [graders (graders)]
+         [graders (graders)])
     (map (lambda (grader) 
            (grader-assignment grader ps (filter (lambda (x) (eq? (student-grader) (grader-user grader))) users)))
-         graders))))
+         graders)))
 
 (module+ test
   (require rackunit)
