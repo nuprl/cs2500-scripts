@@ -30,9 +30,9 @@
     (smtp-send-message
       (smtp-server)
       (head-ta-email)
-      (list (head-ta-email) (student-email x))
+      (list (head-ta-email) (student-email x) "rpless@ccs.neu.edu" "florence@ccs.neu.edu")
       (standard-message-header 
-        (head-ta-email) (list (head-ta-email) (student-email x)) (list) (list) "Invalid CS2500 Handin account")
+        (head-ta-email) (list (head-ta-email) (student-email x) "rpless@ccs.neu.edu" "florence@ccs.neu.edu") (list) (list) "Invalid CS2500 Handin account")
       (list 
        (format "~a," (student-name x))
        ""
