@@ -46,7 +46,7 @@
 (define (send-assignments-to-graders problem-sets)
   (let* ([gras (flatten (map assign-graders problem-sets))]
          [files (map tar-assignments gras)]) 
-    (for-each (lambda (x y) (prtinf "Would email ~a ~a" x y)) gras files)
+    (for-each (lambda (x y) (printf "Would email ~a ~a" x y)) gras files)
     #;(for-each email-grader gras files)
     (for-each delete-file files)))
 
