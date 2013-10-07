@@ -32,8 +32,8 @@
               (third (second raw))
               (second (second raw))
               (fourth (second raw))
-              ""
-              ""))
+              (fifth (second raw))
+              (sixth (second raw))))
          users-raw)))
 
 ;; students 
@@ -48,7 +48,7 @@
 (define (symbol->students s) (string->students (symbol->string s)))
 
 (define (string->students s)
-  (let ([usernames (string-split s "+")])
+  (let ([usernames (map string->symbol (string-split s "+"))])
     (filter (lambda (student) (memq (student-username student) usernames)) (students))))
 
 ;; symbol->student

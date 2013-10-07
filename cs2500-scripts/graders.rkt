@@ -5,7 +5,8 @@
          grader-name
          grader-email
 
-         graders)
+         graders
+         symbol->grader)
 
 ;; string x string x string
 ;; must be read-able and write-able
@@ -22,3 +23,7 @@
     (with-input-from-file graders-path read))))
 
 
+;; symbol -> grader
+;; produces a grader given a grader uername
+(define (symbol->grader s)
+  (car (filter (lambda (x) (eq? s (grader-user x))) (graders))))
