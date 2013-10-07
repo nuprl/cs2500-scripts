@@ -46,7 +46,8 @@
 (define (send-assignments-to-graders problem-sets)
   (let* ([gras (flatten (map assign-graders problem-sets))]
          [files (map tar-assignments gras)]) 
-    (for-each email-grader gras files)
+    (for-each (lambda (x y) (prtinf "Would email ~a ~a" x y)) gras files)
+    #;(for-each email-grader gras files)
     (for-each delete-file files)))
 
 ;; TODO: Run local smtp server to test email functions
@@ -81,12 +82,11 @@
                             (group (string->students (path->string path)) 
                                    (build-path (problem-set-dir ps) path)))))
                  (directory-list (build-path (server-dir) (problem-set-dir ps))))]
-         [users (shuffle users)]
-         [graders (shuffle (graders))]
-         [n (ceiling (/ (length users) (length graders)))])
-    (map (lambda (grader users) (grader-assignment grader ps users))
-         graders
-         (split-into-chunks n users))))
+         [users users]
+         [graders (graders)]
+    (map (lambda (grader) 
+           (grader-assignment grader ps (filter (lambda (x) (eq? (student-grader) (grader-user grader))) users)))
+         graders))))
 
 (module+ test
   (require rackunit)
@@ -109,20 +109,6 @@
                                                             1234)))))
       3))
   (delete-directory/files "/tmp/test"))
-
-;; taken from http://stackoverflow.com/questions/8725832/how-to-split-list-into-evenly-sized-chunks-in-racket-scheme
-(define (split-into-chunks n xs)
-  (if (null? xs)
-      '()
-      (let ((first-chunk (take-up-to n xs))
-            (rest (drop xs n)))
-           (cons first-chunk (split-into-chunks n rest)))))
-
-(define (take-up-to n xs)
-  (if (or (zero? n) (null? xs))
-      '()
-      (cons (car xs) (take-up-to (- n 1) (cdr xs)))))
-
 
 ;; tar-assignments
 ;; grader-assignment -> path to <problem-set>.zip
