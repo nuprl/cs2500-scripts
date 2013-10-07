@@ -84,7 +84,7 @@
                  (directory-list (build-path (server-dir) (problem-set-dir ps))))]
          [graders (graders)])
     (map (lambda (grader) 
-           (grader-assignment grader ps (filter (lambda (x) (eq? (student-grader x) (grader-user grader))) users)))
+           (grader-assignment grader ps (filter (lambda (x) (eq? (student-grader (car (group-users x))) (grader-user grader))) users)))
          graders)))
 
 (module+ test
