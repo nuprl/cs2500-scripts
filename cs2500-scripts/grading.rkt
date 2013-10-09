@@ -16,6 +16,7 @@
 (provide
   send-assignments-to-graders
   grades->handin
+  init-grades
   ;grader-assignment
   ;grader
   ;email-grader
@@ -211,11 +212,23 @@
 (define (grades->handin ps n ls)
   (for ([stu*grade ls])
     (let ([path (build-path (server-dir) (problem-set-dir ps)
-                             (symbol->string (first stu*grade)))])
-      (with-handlers ([values values])
-        (make-directory* path))
+                  (symbol->string (first stu*grade)))])
+      (with-handlers ([values values]) (make-directory* path))
       (with-output-to-file (build-path path "grade") 
         (thunk (display (format "~a/~a" (* (second stu*grade) n) n)))))))
+
+;; NB: COPY PASTA, see grades->handin
+;; problem-set exact-number -> (void)
+;; Create a grade file on the handin server with '0/n' for the given
+;; problem-set for every student. If a grade file exists, leave it.
+(define (init-grades ps n)
+  (for ([stu (students)])
+    (let ([path (build-path (server-dir) (problem-set-dir ps)
+                  (symbol->string (student-username stu)))])
+      (with-handlers ([values values])
+        (make-directory* path)
+        (with-output-to-file (build-path path "grade") 
+          (thunk (display (format "0/~a" n))))))))
 
 ;; parse-graded-problem-set
 ;; path -> (listof grade-entry)
