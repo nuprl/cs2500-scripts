@@ -216,7 +216,7 @@
   (for ([stu*grade ls])
     (let ([path (build-path (server-dir) (problem-set-dir ps)
                              (symbol->string (first stu*grade)))])
-      (with-handlers ([values valeus])
+      (with-handlers ([values values])
         (make-directory* path))
       (with-output-to-file (build-path path "grade") 
         (thunk (display (format "~a/~a" (* (second stu*grade) n) n)))))))
