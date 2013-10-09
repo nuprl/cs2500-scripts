@@ -15,6 +15,7 @@
   "config.rkt")
 (provide
   send-assignments-to-graders
+  grades->handin
   ;grader-assignment
   ;grader
   ;email-grader
@@ -203,6 +204,18 @@
                      #:port-no (smtp-port)
                      #:auth-user (smtp-user)
                      #:auth-passwd (smtp-passwd))))
+
+;; problem-set exact-number (listof (symbol? exact-number)) -> (void)
+;; For a problem set ps with maximum points n, write a grade file on the
+;; handin server for each (student grade) pair in ls.
+(define (grades->handin ps n ls)
+  (for ([stu*grade ls])
+    (let ([path (build-path (server-dir) (problem-set-dir ps)
+                             (symbol->string (first stu*grade)))])
+      (with-handlers ([values valeus])
+        (make-directory* path))
+      (with-output-to-file (build-path path "grade") 
+        (thunk (display (format "~a/~a" (* (second stu*grade) n) n)))))))
 
 ;; parse-graded-problem-set
 ;; path -> (listof grade-entry)
