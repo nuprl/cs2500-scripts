@@ -46,8 +46,11 @@
 (define (send-assignments-to-graders problem-sets)
   (let* ([gras (flatten (map assign-graders problem-sets))]
          [files (map tar-assignments gras)]) 
-    (for-each (lambda (x y) (printf "Would email ~a ~a" x y)) gras files)
-    #;(for-each email-grader gras files)
+    (display (length (foldr (lambda (x ls) (apply append ls (map group-users (grader-assignment-groups x)))) '() gras)))
+    (newline)
+    (display (length gras))
+    (newline)
+    (for-each email-grader gras files)
     (for-each delete-file files)))
 
 ;; TODO: Run local smtp server to test email functions
@@ -82,7 +85,8 @@
                             (group (string->students (path->string path)) 
                                    (build-path (problem-set-dir ps) path)))))
                  (directory-list (build-path (server-dir) (problem-set-dir ps))))]
-         [graders (graders)])
+         [graders (graders)]
+         [users (filter-not (lambda (x) (null? (group-users x))) users)])
     (map (lambda (grader) 
            (grader-assignment grader ps (filter (lambda (x) (eq? (student-grader (car (group-users x))) (grader-user grader))) users)))
          graders)))
@@ -120,12 +124,12 @@
                       (grader-user (grader-assignment-grader gra)) 
                       (problem-set-name (grader-assignment-ps gra)))])
        (parameterize ([current-directory (server-dir)])
-         (apply (curry zip file)
+           (apply (curry zip file)
                 (append-map (compose (curry find-files 
                                      (lambda (path) 
                                        (or 
                                          (regexp-match ".+handin.rkt" (path->string path))
-                                         (regexp-match ".+grading/text.rkt" (path->string path)))))
+                                         (regexp-match ".+[^0-9]/grading/text.rkt" (path->string path)))))
                               group-dir) (grader-assignment-groups gra))))
        file))
 
