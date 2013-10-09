@@ -222,11 +222,12 @@
         (thunk (display (format "~a/~a" (* (second stu*grade) n) n)))))))
 
 ;; NB: COPY PASTA, see grades->handin
-;; problem-set exact-number -> (void)
+;; problem-set exact-number (students -> bool) -> (void)
 ;; Create a grade file on the handin server with '0/n' for the given
-;; problem-set for every student. If a grade file exists, leave it.
-(define (init-grades ps n)
-  (for ([stu (students)])
+;; problem-set for all students for which f returns true. If a grade
+;; file exists, leave it.
+(define (init-grades ps n f)
+  (for ([stu (filter f (students))])
     (let ([path (build-path (server-dir) (problem-set-dir ps)
                   (symbol->string (student-username stu)))])
       (with-handlers ([values values])
