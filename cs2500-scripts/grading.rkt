@@ -46,14 +46,14 @@
 ;; each student. The folder will contain all material handed in for
 ;; <problem-set>
 (define (send-assignments-to-graders problem-sets)
-  (let* ([gras (flatten (map assign-graders problem-sets))]
+  (let* ([gras (filter (lambda (x) (not (null? (grader-assignment-groups x)))) (flatten (map assign-graders problem-sets)))]
          [files (map tar-assignments gras)]) 
     (display (length (foldr (lambda (x ls) (apply append ls (map group-users (grader-assignment-groups x)))) '() gras)))
     (newline)
     (display (length gras))
     (newline)
     (for-each email-grader gras files)
-    (for-each delete-file files)))
+    (with-handlers (#;[values values]) (for-each delete-file files))))
 
 ;; TODO: Run local smtp server to test email functions
 #;(module+ test
@@ -90,7 +90,7 @@
          [graders (graders)]
          [users (filter-not (lambda (x) (null? (group-users x))) users)])
     (map (lambda (grader) 
-           (grader-assignment grader ps (filter (lambda (x) (eq? (student-grader (car (group-users x))) (grader-user grader))) users)))
+           (grader-assignment grader ps (filter (lambda (x) (string=? (student-grader (car (group-users x))) (grader-user grader))) users)))
          graders)))
 
 (module+ test
@@ -126,13 +126,14 @@
                       (grader-user (grader-assignment-grader gra)) 
                       (problem-set-name (grader-assignment-ps gra)))])
        (parameterize ([current-directory (server-dir)])
-           (apply (curry zip file)
+           (with-handlers (#;[values (lambda x (printf "Could not create zip for ~a\n" gra))])
+              (apply (curry zip file)
                 (append-map (compose (curry find-files 
                                      (lambda (path) 
                                        (or 
                                          (regexp-match ".+handin.rkt" (path->string path))
                                          (regexp-match ".+[^0-9]/grading/text.rkt" (path->string path)))))
-                              group-dir) (grader-assignment-groups gra))))
+                              group-dir) (grader-assignment-groups gra)))))
        file))
 
 (module+ test
@@ -213,13 +214,14 @@
 ;; problem-set exact-number (listof (symbol? exact-number)) -> (void)
 ;; For a problem set ps with maximum points n, write a grade file on the
 ;; handin server for each (student grade) pair in ls.
-(define (grades->handin ps n ls)
+(define (grades->handin ps n ls #:force [force? #f])
   (for ([stu*grade ls])
     (let ([path (build-path (server-dir) (problem-set-dir ps)
                   (symbol->string (first stu*grade)))])
       (with-handlers ([values values]) (make-directory* path))
       (with-output-to-file (build-path path "grade") 
-        (thunk (display (format "~a/~a" (* (second stu*grade) n) n)))))))
+        (thunk (display (format "~a/~a" (* (second stu*grade) n) n)))
+	#:exists (if force? 'replace 'error)))))
 
 ;; NB: COPY PASTA, see grades->handin
 ;; problem-set exact-number (students -> bool) -> (void)
