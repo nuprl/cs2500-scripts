@@ -18,7 +18,7 @@
 (define graders 
   (make-parameter 
     (map (lambda (ls)
-           (grader (string->symbol (car (string-split (second ls) "@")))
+           (grader (car (string-split (second ls) "@"))
              (car ls) (second ls)))
     (with-input-from-file graders-path read))))
 
