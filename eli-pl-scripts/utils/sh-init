@@ -1,0 +1,30 @@
+#!/bin/bash
+
+print_setenv() {
+  # print var='val' with the stupid way to quote single-quotes...
+  echo "export $1='"${2//\'/\'\"\'\"\'}"'"
+}
+
+#COURSE="$(cd $(dirname "$0")/..; pwd)"
+
+export COURSE="$HOME/f13-cs2500-server/"
+print_setenv COURSE "$HOME/f13-cs2500-server"
+echo 'OLDPLTHOME="$PLTHOME"'
+# PLTHOME="$HOME/src/plt-pl"
+plthome="$HOME/plt"
+#print_setenv PLTHOME "$plthome"
+export PLTCOLLECTS="$COURSE/collects:"
+export PLT_HANDINSERVER_DIR="$COURSE/cs2500-f13-server"
+export PACKAGE="$(basename "$COURSE")"
+print_setenv PLTCOLLECTS "$COURSE/collects:"
+print_setenv PLT_HANDINSERVER_DIR "$COURSE/cs2500-f13-server"
+print_setenv PACKAGE "$(basename "$COURSE")"
+
+print_setenv ADDITIONAL_COLLECTIONS "typed-racket"
+print_setenv ADDITIONAL_COLLECTIONS ""
+
+# defaults for actual use (in class, my own version, etc)
+print_setenv EXECPLTHOME "$HOME/src/plt-pl"
+print_setenv EXECPLTHOME "$HOME/plt"
+print_setenv EXECPLTHOME "$plthome"
+print_setenv EXECPLTCOLLECTS ""

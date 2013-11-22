@@ -1,0 +1,88 @@
+#!/bin/bash
+eval "`$(dirname "$0")/utils/sh-init`"
+
+PSETS="$COURSE/hw"
+tgz="grading.tgz"
+
+if [ "$#" != "2" ]; then
+  echo "usage: $0 hwNN grading.tgz/tar/zip" 1>&2; exit
+fi
+
+tgz="$2"
+cd "`dirname \"$tgz\"`"
+tgz="`pwd`/`basename \"$tgz\"`"
+if [ ! -e "$tgz" ]; then
+  echo "Error: \"$tgz\" dows not exist" 1>&2; exit 1
+fi
+
+if [ -d "$PSETS/$1" ]; then
+  cd "$PSETS/$1"
+else
+  echo "Error: $PSETS/$1 does not exist" 1>&2; exit 1
+fi
+if [ ! -e "checker.rkt" ]; then
+  echo "Error: run from a submission directory, or use an argument" 1>&2
+  exit 1
+fi
+
+echo "In \"`pwd`\", unpacking \"$tgz\""
+
+if [ -d "grading" ]; then
+  echo "Error: found a \"grading\" directory, clean it up first" 1>&2
+  exit 1
+fi
+
+mkdir "grading"; cd "grading"
+
+mkdir "$$"; cd "$$"
+case $tgz in
+  ( *.tgz | *.tar.gz ) tar xzf "$tgz" ;;
+  ( *.tar ) tar xf "$tgz" ;;
+  ( *.zip ) unzip "$tgz" ;;
+  ( * ) cd ../..; rm -r "grading"
+        echo "Unknown file suffix: $tgz" 1>&2; exit 1
+        ;;
+esac
+cd ..
+find . -type f -print0 | xargs -0 -n 1 -i mv -i "{}" .
+rm -r "$$"
+cd ..
+
+# find the extension that is used
+echo "In \"`pwd`\", finding name suffix"
+ext="`find . -type f | grep 'grading/text' | sed -e 's/^.*[.]//' | sort -u`"
+if [ "`echo \"$ext\" | wc -l`" != "1" ]; then
+  ext="`echo \"$ext\" | tr '[:space:]' ' '`"
+  exit "found multiple different extensions: $ext"
+fi
+
+for f in "grading/"*; do
+  d="`basename \"$f\" \".$ext\"`"
+  if [ ! -e "grading/$d.$ext" ]; then
+    echo ">>> skipping \"$f\" (this is not a grading file?)"
+  elif [ ! -d "$d" ]; then
+    echo ">>> skipping \"$d\" (no student directory)"
+  elif [ ! -d "$d/grading" ]; then
+    echo ">>> skipping \"$d\" (no \"grading\" subdirectory)"
+  elif [ -e "$d/graded.$ext" ]; then
+    if diff -q "$f" "$d/graded.$ext" > /dev/null; then
+      # same file, skip new
+      echo ">>> skipping \"$d\" (identical to \"graded.$ext\")"
+      rm "$f"
+    elif [ "$f" -nt "$d/graded.$ext" ]; then
+      # newer file, just move newer file over
+      mv -v "$f" "$d/graded.$ext"
+    else
+      echo ">>> skipping \"$d\" (\"graded.$ext\" exists and newer)"
+    fi
+  else
+    mv -v "$f" "$d/graded.$ext"
+  fi
+done
+
+rmdir "grading" \
+|| { echo "Error: \"`pwd`/grading\" directory not empty" 1>&2; exit 1; }
+
+# doing this is confusing since I'm often running it, then fix some files, and
+# then the obvious instinct is to run it again.
+# "$COURSE/compute-grades"
