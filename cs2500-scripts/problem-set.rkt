@@ -7,16 +7,8 @@
   problem-set
   problem-set-name
   problem-set-dir
-  problem-set-start-date
-  problem-set-end-date
 
-  problem-sets
-
-  active-problem-sets
-
-  refresh-problem-sets
   write-problem-sets!
-  write-current-problem-sets!
 
   gen-problem-sets)
 
@@ -36,14 +28,6 @@
                   `(inactive-dirs ,(map problem-set-dir inactive)))
                        conf)))
       #:exists 'replace)))
-;; write-current-problem-sets!
-;; (void) -> (void)
-;; refreshs the problem sets stored in problem-sets-path, and
-;; writes them to the server config file.
-(define (write-current-problem-sets!)
-  (call-with-values
-    (thunk (refresh-problem-sets (with-input-from-file (problem-sets-path) read)))
-    write-problem-sets!))
 
 ;; gen-problem-sets
 ;; exact-integer natrual -> (listof problem-set)
@@ -54,5 +38,5 @@
                                            (lambda (x) (~a x #:width 2
                                                            #:align 'right
                                                            #:left-pad-string "0"))
-                                           add1))]
+                                           add1))])
     (map (lambda (name) (problem-set name name)) names/dirs)))
