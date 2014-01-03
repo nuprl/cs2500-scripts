@@ -1,1 +1,20 @@
 Redesign to be a collection, and read config.rktd, tutor.txt, etc from a working directory
+
+-- Added via git grep TODO: >> TODO; git grep NB: >> TODO --
+
+cs2500-scripts/config.rkt:;; TODO: (define-parameters (name ...) (default ...) (guard ...))
+cs2500-scripts/config.rkt:;; TODO: make internal name match config.rktd name
+cs2500-scripts/config.rkt:;; TODO: Make parameters
+cs2500-scripts/gradebook.rkt:;; TODO: test
+cs2500-scripts/grading.rkt:;; TODO: clean up
+cs2500-scripts/grading.rkt:;; TODO: Test
+cs2500-scripts/grading.rkt:;; TODO: Somethings are fragile with respect to paths, current directory
+cs2500-scripts/grading.rkt:;; TODO: Run local smtp server to test email functions
+cs2500-scripts/grading.rkt:        ;; TODO: This is awful -- fix net/smtp and net/sendmail to allow
+cs2500-scripts/grading.rkt:;; TODO:
+cs2500-scripts/problem-set.rkt:;; TODO: test
+info.rkt:; TODO: add dependencies
+update-grades.rkt:                         ;; TODO: Should probably use build-path
+validate.rkt:;; TODO: Fix data definitions
+cs2500-scripts/gradebook.rkt:;; NB: Pretend this file doesn't exist.
+cs2500-scripts/grading.rkt:;; NB: COPY PASTA, see grades->handin
