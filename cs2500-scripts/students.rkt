@@ -9,7 +9,7 @@
   student-email
   student-section
   student-grader
-  
+
   students
 
   symbol->students
@@ -18,7 +18,7 @@
   string->student
   students->users.rktd)
 
-;; string x string x number x string x string 
+;; string x string x number x string x string
 (struct student (username passwdhash id name email section grader) #:prefab)
 
 ;; read-students
@@ -26,7 +26,7 @@
 ;; reads and parses the list of students from students-path
 (define (read-students)
   (let ([users-raw (with-input-from-file students-path read)])
-    (map (lambda (raw) 
+    (map (lambda (raw)
            (student (car raw)
               (first (second raw))
               (third (second raw))
@@ -36,7 +36,7 @@
               (sixth (second raw))))
          users-raw)))
 
-;; students 
+;; students
 ;; -> (listof student)
 ;; (listof student) -> void
 (define students (make-parameter (read-students)))
@@ -44,7 +44,7 @@
 ;; symbol->students
 ;; symbol -> (listof student)
 ;; given a symbol of usernames seperated by #\+, return the list of
-;; students 
+;; students
 (define (symbol->students s) (string->students (symbol->string s)))
 
 (define (string->students s)
