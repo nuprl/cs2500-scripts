@@ -6,7 +6,16 @@ A package for scripting various tasks related to manaing students, grading, and 
 Install instructions
 ===
 
-```raco pkg install github://github.com/bluephoenix47/cs2500-scripts/master```
+Ideally, this should be installable by:
+```$ raco pkg install github://github.com/bluephoenix47/cs2500-scripts/master```
+
+But I haven't tested that. Personally, I'm using it by:
+
+```
+$ git clone github://github.com/bluephoenix47/cs2500-scripts
+$ cd cs2500-scripts
+do stuff
+```
 
 Usage
 ===
