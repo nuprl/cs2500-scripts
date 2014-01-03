@@ -1,0 +1,89 @@
+#!/bin/bash
+eval "`$(dirname "$0")/utils/sh-init`"
+
+PSETS="$COURSE/cs2500-f13-server"
+tgz="grading.tgz"
+grep_for=""
+include_orig="no"
+use_zip="no"
+tmp_grade="?"
+
+usage() {
+  echo "usage: $0 [options] hwNN"
+  echo "  -o <file>    -- output to this instead of grading.tgz"
+  echo "  -m 'pattern' -- pack only files that match that pattern"
+  echo "  -b           -- include binary files in the tgz file"
+  echo "  -z           -- use zip instead of tar-gz (use -o to set output)"
+  echo "  -g 'grade'   -- put the given grade for packed hws (that has none)"
+  exit
+}
+pexit () {
+  echo "Error: $1" 1>&2; exit 1
+}
+
+while true; do
+  case "x$1" in
+    ( "x-h"* | "x--h"* ) usage ;;
+    ( "x-o" ) tgz="$2";           shift 2 ;;
+    ( "x-m" ) grep_for="$2";      shift 2 ;;
+    ( "x-b" ) include_orig="yes"; shift ;;
+    ( "x-z" ) use_zip="yes";      shift ;;
+    ( "x-g" ) tmp_grade="$2";     shift 2 ;;
+    ( "x-"* ) usage ;;
+    ( * ) break ;;
+  esac
+done
+
+if [ "$#" != "1" ]; then
+  usage
+fi
+
+otgz="$tgz"
+cd "`dirname \"$tgz\"`"
+tgz="`pwd`/`basename \"$tgz\"`"
+if [ -e "$tgz" ]; then pexit "\"$otgz\" already exists"; fi
+
+if [ ! -d "$PSETS/$1" ]; then pexit "$PSETS/$1 does not exist"; fi
+cd "$PSETS/$1"
+if [ ! -e "checker.rkt" ]; then pexit "`pwd` is not a submission dir"; fi
+
+# find the extension that is used
+echo "In \"`pwd`\", finding name suffix"
+ext="`find . -type f | grep 'grading/text' | grep -v .bak | sed -e 's/^.*[.]//' | sort -u`"
+if [ "`echo \"$ext\" | wc -l`" != "1" ]; then
+  ext="`echo \"$ext\" | tr '[:space:]' ' '`"
+  pexit "found multiple different extensions: $ext"
+fi
+
+echo "In \"`pwd`\", creating \"$tgz\""
+if [ -d "grading" ]; then pexit "found a 'grading' directory, clean it"; fi
+mkdir "grading"
+
+for d in *; do
+  grading="$d/grading"
+  text="$grading/text.$ext"
+  graded="$d/graded.$ext"
+  out="grading/$1/$d/grading/text.$ext"
+  grade="$d/grade"
+  orig="grading/$1/$d/handin.$ext"
+  if [ "$d" = "grading" -o ! -d "$d" ]; then :
+  elif [ ! -d "$grading" ]; then echo ">>> skipping \"$d\" (no \"$grading\")"
+  elif [ ! -e "$text" ]; then    echo ">>> skipping \"$d\" (no \"$text\")"
+  elif [ "x$grep_for" != "x" ] && ! grep -q "$grep_for" "$text"; then :
+  else
+    mkdir -p "grading/$1/$d"
+    if [ ! -e "$grade" ]; then echo -n "$tmp_grade" > "$grade"; fi
+    if [ -e "$graded" ]; then echo -n "Using graded: "; cp -v "$graded" "$out"
+    else cp -v "$text" "$out"; fi
+    if [ "$include_orig" = "yes" ]; then
+      if [ -e "$d/handin.$ext" ]; then cp -v "$d/handin.$ext" "$orig"
+      else echo ">>> skipping \"$d/handin.$ext\" (not found)"; fi
+    fi
+  fi
+done
+
+echo "Making archive"
+cd grading
+if [ "$use_zip" = "yes" ]; then zip -r9 "$tgz" "$1"
+else tar czf "$tgz" "grading"; fi
+rm -r "grading"
