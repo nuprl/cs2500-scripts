@@ -4,8 +4,8 @@
          "cs2500-scripts/config.rkt")
 
 (write-problem-sets!
-  (list)
-  (list (problem-set "quiz1" "quiz1")
+  (list) ;; active
+  (list (problem-set "quiz1" "quiz1") ;; inactive
         (problem-set "quiz2" "quiz2")
         (problem-set "quiz3" "quiz3")
         (problem-set "quiz4" "quiz4")
