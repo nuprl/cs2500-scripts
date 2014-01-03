@@ -1,6 +1,7 @@
+;; NB: Pretend this file doesn't exist.
 #lang racket
 ;; TODO: test
-(require 
+(require
   "config.rkt"
   "graders.rkt"
   "students.rkt"
@@ -22,7 +23,7 @@
 ;; read-gradebook
 ;; -> (listof grade-entry)
 ;; reads the gradebook from the gradebook-path
-(define (read-gradebook) 
+(define (read-gradebook)
   (with-input-from-file gradebook-path read))
 
 ;; save-gradebook!
@@ -36,15 +37,15 @@
 ;; append-to-gradebook!
 ;; (listof grade-entry) -> void
 ;; appends grades to gradebook, and saves the gradebook file to disk
-(define (append-to-gradebook! grades) 
+(define (append-to-gradebook! grades)
   (save-gradebook! (append grades (read-gradebook))))
 
 ;; student->grade
 ;; student -> number
 ;; computes the average grade for a student
 (define (student->grade student)
-  (average-grade 
-    (filter (lambda (grade) 
+  (average-grade
+    (filter (lambda (grade)
               (equal? (grade-entry-student grade) student))
       (read-gradebook))))
 

@@ -3,7 +3,7 @@
 
 ;; get-config
 ;; symbol -> any
-;; retrieves the config value for the symbol s from config.rktd 
+;; retrieves the config value for the symbol s from config.rktd
 (define (get-config s)
   (let ([config-ls (with-input-from-file (build-path (current-directory) "config.rktd") read)])
     (or (second (assq s config-ls)))))
@@ -18,7 +18,8 @@
 ;; string
 (define server-dir (make-parameter (get-config 'server-dir)))
 ;; string
-(define grade-server-dir (make-parameter (get-config 'grade-server-dir)))
+;; TODO: make internal name match config.rktd name
+(define grade-server-dir (make-parameter (get-config 'graded-dir)))
 ;; string
 (define smtp-server (make-parameter (get-config 'smtp-server)))
 ;; string
