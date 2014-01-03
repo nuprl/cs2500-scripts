@@ -5,6 +5,9 @@ exec "racket" "$0" "$@"
 |#
 
 #lang racket/base
+;; Warning: chunks of this file have been modified by William J. Bowman
+;; for cs2500f13. These chunks may contradict the README without
+;; warning.
 
 ;; ============================================================================
 ;; customizations
