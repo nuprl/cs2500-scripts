@@ -1,0 +1,126 @@
+#!/bin/sh
+#| -*- scheme -*-
+exec gracket -tm "$0" "$@"
+|#
+
+#lang racket/gui
+
+;; ===========================================================================
+
+(define (insert-to-editor editor . xs)
+  (for-each (lambda (x)
+              (send editor insert
+                    (if (string? x) x (make-object editor-snip% x))))
+            xs))
+
+;; for number-snips etc
+(require framework mrlib/matrix-snip)
+
+;; Hack support for "test-case-box%"
+(define test-sc
+  (new (class snip-class%
+         (define/override (read f)
+           (let ([test (new test%)]) (send test read-from-file f) test))
+         (super-new))))
+(define test%
+  (class editor-snip%
+    (inherit set-snipclass get-editor)
+    (define to-test       (new text%))
+    (define expected      (new text%))
+    (define predicate     (new text%))
+    (define should-raise  (new text%))
+    (define error-message (new text%))
+    (define/public (read-from-file f)
+      (unless (eq? 2 (send test-sc reading-version f)) (error "BOOM"))
+      (send to-test       read-from-file f)
+      (send expected      read-from-file f)
+      (send predicate     read-from-file f)
+      (send should-raise  read-from-file f)
+      (send error-message read-from-file f)
+      (send f get (box 0))  ; enabled?
+      (send f get (box 0))  ; collapsed?
+      (send f get (box 0))) ; error-box
+    (super-new)
+    (set-snipclass test-sc)
+    (insert-to-editor (get-editor)
+      "{{TEST:\n  expression: " to-test "\n  should be:  " expected "\n}}")))
+(send test-sc set-classname "test-case-box%")
+(send test-sc set-version 2)
+(send (get-the-snip-class-list) add test-sc)
+
+;; Hack support for "text-box%"
+(define text-box-sc
+  (new (class snip-class%
+         (define/override (read f)
+           (let ([text (new text-box%)]) (send text read-from-file f) text))
+         (super-new))))
+(define text-box%
+  (class editor-snip%
+    (inherit set-snipclass get-editor)
+    (define text (new text%))
+    (define/public (read-from-file f)
+      (unless (eq? 1 (send text-box-sc reading-version f)) (error "BOOM"))
+      (send text read-from-file f))
+    (super-new)
+    (set-snipclass text-box-sc)
+    (insert-to-editor (get-editor) "{{TEXT: " text "}}")))
+(send text-box-sc set-classname "text-box%")
+(send text-box-sc set-version 2)
+(send (get-the-snip-class-list) add text-box-sc)
+
+;; input-port->text-input-port : input-port (any -> any) -> input-port
+;;  the `filter' function is applied to special values; the filter result is
+;;  `display'ed into the stream in place of the special
+(define (input-port->text-input-port src . filter)
+  ;; note that snip->text below already takes care of some snips
+  (define (item->text x)
+    (cond [(is-a? x snip%)
+           (format "~a" (or (send x get-text 0 (send x get-count) #t) x))]
+          [(special-comment? x)
+           (format "#| ~a |#" (special-comment-value x))]
+          [(syntax? x) (syntax->datum x)]
+          [else x]))
+  (let-values ([(filter) (if (pair? filter) (car filter) item->text)]
+               [(in out) (make-pipe 4096)])
+    (thread
+     (lambda ()
+       (let ([s (make-bytes 4096)])
+         (let loop ()
+           (let ([c (read-bytes-avail! s src)])
+             (cond [(number? c) (write-bytes s out 0 c) (loop)]
+                   [(procedure? c)
+                    (let ([v (let-values ([(l col p) (port-next-location src)])
+                               (c (object-name src) l col p))])
+                      (display (filter v) out))
+                    (loop)]
+                   [else (close-output-port out)])))))) ; Must be EOF
+    in))
+
+(define (snip->text x)
+  (let ([name (and (is-a? x snip%)
+                   (send (send x get-snipclass) get-classname))])
+    (cond [(equal? name "wximage") "{{IMAGE}}"]
+          [(equal? name "(lib \"comment-snip.ss\" \"framework\")")
+           ;; comments will have ";" prefix on every line, and "\n" suffix
+           (format ";{{COMMENT:\n~a;}}\n"
+                   (send x get-text 0 (send x get-count)))]
+          [else x])))
+
+(define (unpack-submission str)
+   (let* ([base (make-object editor-stream-in-bytes-base% str)]
+         [stream (make-object editor-stream-in% base)]
+         [text (make-object text%)])
+    (read-editor-version stream base #t)
+    (read-editor-global-header stream)
+    (send text read-from-file stream)
+    (read-editor-global-footer stream)
+    text))
+
+(provide main)
+(define (main file)
+  (define submission (file->bytes file))
+  (with-handlers ([values (lambda x (write submission))])
+   (copy-port
+   (input-port->text-input-port
+    (open-input-text-editor (unpack-submission submission) 0 'end snip->text))
+   (current-output-port))))
