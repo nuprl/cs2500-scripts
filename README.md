@@ -76,10 +76,11 @@ handin-server/hw/hw1`. Or whatever.
 Managing grades/Eli's scripts
 ---
 
-Eli's crazy scripts are included in this pacakge under eli-scripts. They
-provide all kinds of neat things, like automatically create `grade`
-files based on a fancy annotation language, managing a gradebook, and
-stuff. Copy the contents to a convienent place, like `~/bin`, go through
-the README, and don't ask questions. I've stripped all but the most
-vital (IMHO) parts of Eli's script, so ignore anything the README
-references that doesn't exist.
+Eli's crazy grading scripts are included in this pacakge under
+eli-scripts. They provide all kinds of neat things, like automatically
+create `grade` files based on a fancy annotation language, managing a
+gradebook, creating per student summaries, and stuff. Copy the contents
+to a convienent place, like `~/bin`, go through the README, and don't
+ask questions. I've stripped all but the most vital (IMHO) parts of
+Eli's script, so ignore anything the README references that doesn't
+exist.
