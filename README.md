@@ -73,8 +73,9 @@ graders return zip files in the right format, you can post assignment
 grades via `unzip graded-dir/hw1/grader/hw1.zip -d
 handin-server/hw/hw1`. Or whatever.
 
-Managing grades/Eli's scripts
+Eli's scripts
 ---
+###Managing grades
 
 Eli's crazy grading scripts are included in this pacakge under
 eli-scripts. They provide all kinds of neat things, like automatically
@@ -84,3 +85,8 @@ to a convienent place, like `~/bin`, go through the README, and don't
 ask questions. I've stripped all but the most vital (IMHO) parts of
 Eli's script, so ignore anything the README references that doesn't
 exist.
+
+###WXME to text
+The handin server accepts files in WXME format. This is not fun to 
+use. It can be configured to automagically textify things, but sometimes 
+you need to do that manually. `wxme-to-text` can help.
