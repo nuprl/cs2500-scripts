@@ -54,7 +54,7 @@ for dealing with grades and grading. To send assignments to graders, use
 
 `cs2500-scripts/grading.rkt` provides a bunch of losely related functions
 for dealing with grades and grading. To post grades for quizzes or
-exams, use grades->handin. update-grades.rkt is a convenient script for
+exams, use `grades->handin`. `update-grades.rkt` is a convenient script for
 command line use. 
 
 It expects the grades to exist in a file `grades.rkt`. This file
@@ -71,7 +71,12 @@ use of a rational to represent 0 and 1.
 For regular assignments using Eli's annotation language, and assuming
 graders return zip files in the right format, you can post assignment
 grades via `unzip graded-dir/hw1/grader/hw1.zip -d
-handin-server/hw/hw1`. Or whatever.
+handin-server/hw/hw1`. Or whatever. `update.sh` demonstrates a script 
+that can be run in a crontab to automagically update grades of all kinds 
+every so often.
+
+*TODO* Elaborate on the expectations of these scripts. I think it's all
+documented in various files in `cs2500-scripts/*.rkt`, but still. 
 
 Eli's scripts
 ---
