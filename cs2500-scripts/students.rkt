@@ -57,13 +57,13 @@
 (define (string->student s) (car (string->students s)))
 
 (define (student->user student)
-  `(,(student-username student)
-     (,(student-passwdhash student)
-      ,(student-name student)
-      ,(student-id student)
-      ,(student-email student)
-      ,(student-section student)
-      ,(student-grader student))))
+  `(,(format "~a" (student-username student))
+     (,(format "~a" (student-passwdhash student))
+      ,(format "~a" (student-name student))
+      ,(format "~a" (student-id student))
+      ,(format "~a" (student-email student))
+      ,(format "~a" (student-section student))
+      ,(format "~a" (student-grader student)))))
 
 ;; students->users.rktd
 ;; (listof student) -> (listof users)
