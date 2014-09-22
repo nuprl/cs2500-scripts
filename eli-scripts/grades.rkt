@@ -28,6 +28,13 @@
 (define grade-file  "grade")
 (define html-file   "graded.html")
 
+(define honors-labs 
+  '("lab7"))
+(define honors-homeworks
+  '("honors-exam1" "honors-hw3" "honors-quiz1" "honors-quiz2" "honors-hw5" "honors-quiz3" "honors-quiz4" "honors-quiz5"))
+(define regular-homeworks
+  '("hw3" "quiz1" "quiz2" "hw5" "quiz3" "quiz4"))
+
 ;; ----------------------------------------------------------------------------
 
 (require racket/list racket/match racket/file)
@@ -100,10 +107,6 @@
   (weighted (filter values tag-grades+weights)))
 (define master-homeworks
   (get-preference 'pl-course:master-homeworks (λ () '())))
-(define honors-homeworks
-  '("honors-exam1" "honors-hw3" "honors-quiz1" "honors-quiz2" "honors-hw5" "honors-quiz3" "honors-quiz4" "honors-quiz5"))
-(define regular-homeworks
-  '("hw3" "quiz1" "quiz2" "hw5" "quiz3" "quiz4"))
 (define (student-single-grade hwname grade student info)
   (match grade
     [(list n m) (/ n m)]
@@ -111,9 +114,9 @@
     [(? symbol?) grade]
     [#f '-- 
        (cond 
-         [(equal? "lab7" (info "Section")) 
+         [(member (info "Lab") honors-labs) 
            (if (member hwname regular-homeworks) '*- '--)] 
-         [(not (equal? "lab7" (info "Section"))) 
+         [(not (member (info "Lab") honors-labs)) 
            (if (member hwname honors-homeworks) '*- '--)])]
     #;[#f '-- (if (and (member hwname master-homeworks) (equal? "U" (info "Status")))
           '*- '--)]
