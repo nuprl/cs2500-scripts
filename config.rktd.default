@@ -1,3 +1,4 @@
+;; Fill this in and save it as config.rktd
 ((head-ta-name "Head TA")
  (head-ta-email "headta@ccs.neu.edu")
  (course-name "CS 2500")

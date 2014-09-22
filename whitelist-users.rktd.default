@@ -1,0 +1,2 @@
+;; Fill this in and save it as whitelist-users.rktd
+((user.name "First Last"))
