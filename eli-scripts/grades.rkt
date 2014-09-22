@@ -8,12 +8,16 @@
   ;;            2012sp     2  4  8 11 12 15 14  9 10  9 15 14 14 16 13
   ;;            2013fa     3 10  6 12 12 12  8  8 10 14  8 13 13 13  8
   ;;                       3  7 10 12 12 13  7 11 10 11 12
-  `([hw    "Homework" ,(+ 12 20 28 40 30) (12 20 28 40 30 60)]
-    [exam   "Exam"     60 (60)]
-    [honors-exam   "Honors Exam Supplement"     42 (42)]
-    [quiz  "Quiz"     4 (1 1 1 1)]
-    [honors-hw "Honors Homework" ,(+ 110 55) (0 0 110 0 55)]
-    [honors-quiz "Honors Quiz" 5 (1 1 1 1 1)]))
+
+  ;; e.g. hw1 max is 44 , hw2 max is 50, exam3 max is 26
+  ;; Do not include bonus points, otherwise they won't be counted as bonus
+  ;; tag   Display-Name Weight Max-Points 
+ ;`([hw    "Homework"   30     (70 133 159 80 87 72 64 61 64 94 98 143)]
+  '([hw    "Homework"   30     (30 36)]
+;    [honors-hw    "Honors Homework"   30     (30 36)]
+    [exam  "Exam"       55     (60 55)]
+    [quiz  "Quiz"       10      (1 1 1 1 1 1 1 1 1 1)]
+    [whim  "Whim"       5      (5)]))
     
 
 (define name-format "Student: {username} Section: {Lab} Grader: <{Grader}>")
