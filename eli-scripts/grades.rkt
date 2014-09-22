@@ -16,7 +16,7 @@
     [honors-quiz "Honors Quiz" 5 (1 1 1 1 1)]))
     
 
-(define name-format "Student: {username} Section: {Section} Grader: <{Grader}>")
+(define name-format "Student: {username} Section: {Lab} Grader: <{Grader}>")
 ;; (define name-format "({Status}) {FormalLast} {FormalFirst}")
 
 (define max-score 100)

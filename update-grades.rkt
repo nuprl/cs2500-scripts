@@ -10,7 +10,7 @@
   #:args (problem-set-name points)
   (values problem-set-name (string->number points))))
 
-(define ps (problem-set psn psn 0 0))
+(define ps (problem-set psn psn))
 
 (let ([files (find-files (lambda (x) (regexp-match #rx"[^0-9]/grades.rkt" x))
                          ;; TODO: Should probably use build-path

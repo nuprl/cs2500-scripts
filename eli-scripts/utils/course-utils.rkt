@@ -32,7 +32,7 @@
 (define course-file (course-path 'file))
 
 (unless (getenv "PLT_HANDINSERVER_DIR")
-  (void (putenv "PLT_HANDINSERVER_DIR" (course-dir "cs2500-f13-server"))))
+  (void (putenv "PLT_HANDINSERVER_DIR" (course-dir "cs2500-server"))))
 
 ;; expecting an optional predicate (for filtering) and a directory in any order
 (provide ls)
@@ -43,7 +43,7 @@
       (if pred? (filter pred? l) l))))
 
 (define (read-data-file f)
-  (with-input-from-file (course-file "cs2500-f13-server" f) read))
+  (with-input-from-file (course-file "cs2500-server" f) read))
 
 ;; ----------------------------------------------------------------------------
 

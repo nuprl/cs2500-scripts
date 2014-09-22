@@ -49,9 +49,9 @@
               (validate-users (students) 
                 (append 
                   (with-input-from-file "whitelist-users.rktd" read) 
-                  (with-input-from-file "roster.rkt" read)))])
+                  (with-input-from-file "roster.rktd" read)))])
   (with-output-to-file students-path 
     (thunk (pretty-write (students->users.rktd valid))) #:exists 'replace)
   (with-output-to-file "invalid-users.rktd"
     (thunk (pretty-write (students->users.rktd invalid))) #:exists 'append)
-  (alert-invalid-users invalid))
+  alert-invalid-users invalid)

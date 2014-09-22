@@ -12,10 +12,10 @@ exec "racket" "$0" "$@"
 ;; ============================================================================
 ;; customizations
 
-(define grades-file (course-file "cs2500-f13-server/grades"))
-(define pset-dir    (course-dir  "cs2500-f13-server"))
+(define grades-file (course-file "cs2500-server/grades"))
+(define pset-dir    (course-dir  "cs2500-server"))
 (define pic-dir     (course-dir  "content"))
-(define grade-conf-file (course-file "cs2500-f13-server/grades.rkt"))
+(define grade-conf-file (course-file "cs2500-server/grades.rkt"))
 
 ;; ============================================================================
 ;; Utilities
