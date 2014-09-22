@@ -10,7 +10,8 @@
   student-section
   student-grader
 
-  students
+  ;students
+  read-students
 
   symbol->students
   symbol->student
@@ -24,7 +25,7 @@
 ;; read-students
 ;; -> (listof student)
 ;; reads and parses the list of students from students-path
-(define (read-students)
+(define (read-students students-path)
   (let ([users-raw (with-input-from-file students-path read)])
     (map (lambda (raw)
            (student (car raw)
@@ -39,7 +40,7 @@
 ;; students
 ;; -> (listof student)
 ;; (listof student) -> void
-(define students (make-parameter (read-students)))
+(define students (make-parameter '()#;(read-students students-path)))
 
 ;; symbol->students
 ;; symbol -> (listof student)
@@ -57,7 +58,7 @@
 (define (string->student s) (car (string->students s)))
 
 (define (student->user student)
-  `(,(format "~a" (student-username student))
+  `(,(student-username student)
      (,(format "~a" (student-passwdhash student))
       ,(format "~a" (student-name student))
       ,(format "~a" (student-id student))
