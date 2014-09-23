@@ -8,9 +8,9 @@
  (smtp-port 587)
  (smtp-user "user")
  (smtp-passwd "pass")
- (message-body 
-   (lambda (grader-name grader-username grader-email problem-set-name) 
-     (format 
+ (message-body
+   (lambda (grader-name grader-username grader-email problem-set-name)
+     (format
 "Hello ~a,
 
 Attached are your assignments for problem set ~a."
