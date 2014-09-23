@@ -22,18 +22,18 @@
          [valid-students (filter (lambda (student) (memq (student-username student) roster-users)) students)])
     (values invalid-students valid-students)))
 
-;; alert-invalid-users 
+;; alert-invalid-users
 ;; (listof users) -> void
 ;; sends an email to each of users alerting them to remake their account
 (define (alert-invalid-users invalid)
-  (for-each (lambda (x) 
+  (for-each (lambda (x)
     (smtp-send-message
       (smtp-server)
       (head-ta-email)
-      (list (head-ta-email) (student-email x) "sonata@ccs.neu.edu" "sonata@ccs.neu.edu")
-      (standard-message-header 
-        (head-ta-email) (list (head-ta-email) (student-email x) "sonata@ccs.neu.edu" "sonata@ccs.neu.edu") (list) (list) "Invalid CS2500 Handin account")
-      (list 
+      (list (head-ta-email) (student-email x))
+      (standard-message-header
+        (head-ta-email) (list (head-ta-email) (student-email x)) (list) (list) "Invalid CS2500 Handin account")
+      (list
        (format "~a," (student-name x))
        ""
        "Your CS2500 handin account is invalid. Please reread http://www.ccs.neu.edu/course/cs2500f13/handin.html#(part._g1265) and create a new account."
@@ -45,12 +45,12 @@
       #:auth-passwd (smtp-passwd)))
     invalid))
 
-(let-values ([(invalid valid) 
-              (validate-users (students) 
-                (append 
-                  (with-input-from-file "whitelist-users.rktd" read) 
+(let-values ([(invalid valid)
+              (validate-users (students)
+                (append
+                  (with-input-from-file "whitelist-users.rktd" read)
                   (with-input-from-file "roster.rktd" read)))])
-  (with-output-to-file students-path 
+  (with-output-to-file students-path
     (thunk (pretty-write (students->users.rktd valid))) #:exists 'replace)
   (with-output-to-file "invalid-users.rktd"
     (thunk (pretty-write (students->users.rktd invalid))) #:exists 'append)
